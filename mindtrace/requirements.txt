@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+requests
+python-dotenv
+elevenlabs
+pandas
+jupyter

@@ -1,0 +1,22 @@
+{
+    "eeg_processing": {
+        "sampling_rate": 256,
+        "bandpass_low": 1.0,
+        "bandpass_high": 40.0,
+        "notch_freq": 50.0,
+        "ica_components": 20
+    },
+    "elevenlabs": {
+        "api_key": "YOUR_API_KEY_HERE",
+        "voice_id": "21m00Tcm4TlvDq8ikWAM",
+        "model_id": "eleven_monolingual_v1"
+    },
+    "spoon": {
+        "api_endpoint": "https://api.spoonos.com/v1",
+        "api_key": "YOUR_SPOON_API_KEY"
+    },
+    "neo": {
+        "rpc_node": "https://testnet.neotube.io",
+        "contract_hash": "0x..."
+    }
+}
