@@ -562,8 +562,8 @@ async def delete_analysis(analysis_id: int):
     return {"success": True, "message": f"Analysis {analysis_id} deleted"}
 
 
-@app.post("/api/process-and-evaluate")
-async def process_and_evaluate(username: str = Form(...)):
+@app.get("/api/process-and-evaluate")
+async def process_and_evaluate(username: str):
     """
     Processes and evaluates a CSV file stored in the database for a given username.
     
@@ -575,14 +575,14 @@ async def process_and_evaluate(username: str = Form(...)):
     5. Returns the evaluation report as markdown
     
     Args:
-        username: Unique username to look up the uploaded CSV file
+        username: Unique username to look up the uploaded CSV file (query parameter)
     
     Returns:
         Markdown-formatted evaluation report
     """
     if not username or username.strip() == "":
         return Response(
-            content="Error: Username is required.",
+            content="Error: Username is required. Use ?username=your_username",
             status_code=400,
             media_type="text/plain"
         )
