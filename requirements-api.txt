@@ -1,0 +1,7 @@
+# API-specific requirements for Vercel
+numpy
+scipy
+pandas
+scikit-learn
+python-dotenv
+

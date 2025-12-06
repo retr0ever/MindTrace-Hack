@@ -1,0 +1,16 @@
+# Files to ignore during Vercel deployment
+node_modules/
+__pycache__/
+*.pyc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+mindtrace/demo/
+*.npy
+*.csv
+uploads/
+cleaned_data.npy
+summary.mp3
+eeg_report.md
+

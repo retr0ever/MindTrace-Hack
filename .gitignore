@@ -1,6 +1,49 @@
-.env
+# Python
 __pycache__/
-*.pyc
-summary.mp3
-mindtrace/uploads/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Data files
+*.npy
+*.csv
+uploads/
 cleaned_data.npy
+summary.mp3
+eeg_report.md
+.env*.local

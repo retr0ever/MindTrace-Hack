@@ -14,11 +14,26 @@ class SpoonLLM:
     def __init__(self, api_key=None, provider="openai"):
         self.api_key = api_key
         self.provider = provider
+        self.config_manager = None
+        self.llm_manager = None
+        
         if SPOON_AVAILABLE:
-            # Initialize SpoonOS LLM Manager
-            # Assuming ConfigurationManager picks up env vars or we can pass them
-            self.config_manager = ConfigurationManager()
-            self.llm_manager = LLMManager(self.config_manager)
+            try:
+                print(f"[SpoonLLM] Initializing LLM Manager with provider: {provider}")
+                # Initialize SpoonOS LLM Manager
+                # Assuming ConfigurationManager picks up env vars or we can pass them
+                self.config_manager = ConfigurationManager()
+                print(f"[SpoonLLM] ConfigurationManager created")
+                self.llm_manager = LLMManager(self.config_manager)
+                print(f"[SpoonLLM] LLMManager initialized successfully")
+            except Exception as e:
+                print(f"[SpoonLLM] ERROR: Failed to initialize LLM Manager: {e}")
+                import traceback
+                print(f"[SpoonLLM] Traceback: {traceback.format_exc()}")
+                self.config_manager = None
+                self.llm_manager = None
+        else:
+            print(f"[SpoonLLM] SpoonOS not available (spoon-core not installed)")
 
     async def invoke(self, prompt, context=None):
         """
@@ -26,7 +41,7 @@ class SpoonLLM:
         """
         print(f"[SpoonOS] Invoking LLM with prompt: {prompt}")
 
-        if not SPOON_AVAILABLE:
+        if not SPOON_AVAILABLE or self.llm_manager is None:
             raise RuntimeError(
                 "SpoonOS LLM is not available. Install spoon-core to use interactive commands."
             )

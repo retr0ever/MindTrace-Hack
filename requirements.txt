@@ -1,0 +1,7 @@
+# Python dependencies for Vercel API functions
+numpy
+scipy
+pandas
+scikit-learn
+python-dotenv
+

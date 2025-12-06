@@ -19,11 +19,14 @@ class ElevenAudio:
         # Load API key from environment if not provided
         self.api_key = api_key or os.getenv("ELEVENLABS_API_KEY")
 
-        if not self.api_key or self.api_key == "":
-            raise ValueError(
-                "ElevenLabs API key is required. "
-                "Set ELEVENLABS_API_KEY environment variable or provide it in config."
-            )
+        # TTS is optional - if no API key, audio generation will be disabled
+        if not self.api_key or self.api_key == "" or self.api_key == "YOUR_API_KEY_HERE":
+            self.api_key = None
+            self.client = None
+            self.voice_id = None
+            self.model_id = None
+            print("[ElevenAudio] TTS disabled - no API key provided")
+            return
 
         # Use default voice (Rachel) if not provided
         self.voice_id = voice_id or "21m00Tcm4TlvDq8ikWAM"
@@ -34,11 +37,14 @@ class ElevenAudio:
             self.client = ElevenLabs(api_key=self.api_key)
             print(f"[ElevenAudio] Initialised with voice: {self.voice_id}, model: {self.model_id}")
         except Exception as e:
-            raise ValueError(f"Failed to initialise ElevenLabs client: {e}") from e
+            print(f"[ElevenAudio] Warning: Failed to initialise ElevenLabs client: {e}")
+            self.client = None
+            self.api_key = None
 
     def generate_audio(self, text, output_path, stability=0.5, similarity_boost=0.75):
         """
         Converts text to audio using ElevenLabs TTS.
+        Returns None if TTS is not configured.
 
         Args:
             text: Text to convert to speech
@@ -47,14 +53,19 @@ class ElevenAudio:
             similarity_boost: Voice similarity boost (0.0-1.0, default: 0.75)
 
         Returns:
-            Path to the generated audio file
+            Path to the generated audio file, or None if TTS is disabled
 
         Raises:
-            ValueError: If API key is invalid or text is empty
+            ValueError: If text is empty
             Exception: If TTS generation fails
         """
         if not text or text.strip() == "":
             raise ValueError("Cannot generate audio from empty text")
+
+        # If TTS is not configured, return None
+        if not self.client or not self.api_key:
+            print("[ElevenAudio] TTS disabled - skipping audio generation")
+            return None
 
         try:
             print(f"[ElevenAudio] Generating audio for {len(text)} characters...")
