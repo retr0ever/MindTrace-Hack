@@ -1,283 +1,1011 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>MindTrace &mdash; EEG Cleaning Demo</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindTrace — EEG Signal Analysis Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        margin: 2rem auto;
-        max-width: 800px;
-        line-height: 1.5;
-      }
-      h1,
-      h2,
-      h3 {
-        margin-top: 1.5rem;
-      }
-      form {
-        margin-top: 1rem;
-        padding: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-      }
-      .error {
-        color: #b00020;
-        margin-top: 1rem;
-      }
-      .result {
-        margin-top: 2rem;
-        padding: 1rem;
-        border-radius: 8px;
-        background: #f6f8fa;
-      }
-      button {
-        margin-top: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        border: none;
-        background: #0366d6;
-        color: #fff;
-        cursor: pointer;
-      }
-      button:hover {
-        background: #024f9f;
-      }
-      .report {
-        background: #ffffff;
-        padding: 2rem;
-        border: 1px solid #d1d5da;
-        border-radius: 6px;
-        max-height: 600px;
-        overflow-y: auto;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      }
-      .report h1 {
-        border-bottom: 2px solid #0366d6;
-        padding-bottom: 0.5rem;
-        font-size: 1.8rem;
-        margin-top: 0;
-      }
-      .report h2 {
-        border-bottom: 1px solid #e1e4e8;
-        padding-bottom: 0.3rem;
-        margin-top: 2rem;
-        font-size: 1.5rem;
-      }
-      .report h3 {
-        margin-top: 1.5rem;
-        font-size: 1.2rem;
-        color: #24292e;
-      }
-      .report table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1rem 0;
-      }
-      .report table th,
-      .report table td {
-        border: 1px solid #d1d5da;
-        padding: 0.5rem;
-        text-align: left;
-      }
-      .report table th {
-        background: #f6f8fa;
-        font-weight: 600;
-      }
-      .report table tr:nth-child(even) {
-        background: #f6f8fa;
-      }
-      .report strong {
-        font-weight: 600;
-        color: #24292e;
-      }
-      .report code {
-        background: #f6f8fa;
-        padding: 0.2rem 0.4rem;
-        border-radius: 3px;
-        font-family: "SF Mono", Monaco, Consolas, monospace;
-        font-size: 0.9em;
-      }
-      .download-btn {
-        background: #28a745;
-        margin-left: 0.5rem;
-      }
-      .download-btn:hover {
-        background: #218838;
-      }
-      .report p {
-        margin: 0.75rem 0;
-        line-height: 1.6;
-      }
-      .report ul, .report ol {
-        margin: 0.75rem 0;
-        padding-left: 2rem;
-      }
-      .report li {
-        margin: 0.5rem 0;
-      }
-      .report hr {
-        border: none;
-        border-top: 1px solid #e1e4e8;
-        margin: 2rem 0;
-      }
-      .report blockquote {
-        border-left: 3px solid #0366d6;
-        padding-left: 1rem;
-        margin: 1rem 0;
-        colour: #586069;
-      }
-      .report em {
-        font-style: italic;
-        colour: #24292e;
-      }
+        /* ============================================
+           DESIGN SYSTEM - BASE STYLES
+           ============================================ */
+        :root {
+            /* Colors */
+            --color-white: #FFFFFF;
+            --color-graphite: #2D3436;
+            --color-slate: #636E72;
+            --color-steel-blue: #0984E3;
+            --color-success: #00B894;
+            --color-warning: #FDCB6E;
+            --color-error: #D63031;
+            --color-info: #74B9FF;
+
+            /* Neutrals */
+            --n50: #FAFBFC;
+            --n100: #F1F3F5;
+            --n200: #E9ECEF;
+            --n300: #DEE2E6;
+            --n400: #CED4DA;
+            --n500: #ADB5BD;
+
+            /* Data Viz Colors */
+            --alpha-band: #6C5CE7;
+            --beta-band: #0984E3;
+            --theta-band: #00B894;
+            --delta-band: #FDCB6E;
+            --gamma-band: #FD79A8;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
+
+            /* Transitions */
+            --transition-fast: 150ms;
+            --transition-base: 200ms;
+            --transition-slow: 300ms;
+            --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--color-graphite);
+            background: var(--n50);
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           TYPOGRAPHY
+           ============================================ */
+        h1 {
+            font-size: 32px;
+            line-height: 40px;
+            font-weight: 600;
+            color: var(--color-graphite);
+        }
+
+        h2 {
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 600;
+            color: var(--color-graphite);
+            margin-bottom: var(--space-md);
+        }
+
+        h3 {
+            font-size: 18px;
+            line-height: 28px;
+            font-weight: 600;
+            color: var(--color-graphite);
+            margin-bottom: var(--space-sm);
+        }
+
+        h4 {
+            font-size: 16px;
+            line-height: 24px;
+            font-weight: 600;
+            color: var(--color-graphite);
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 var(--space-2xl);
+        }
+
+        .wizard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            background: var(--color-white);
+            border-bottom: 1px solid var(--n200);
+            padding: var(--space-lg) 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-graphite);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--color-steel-blue);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* ============================================
+           WIZARD STEPS
+           ============================================ */
+        .wizard-steps {
+            background: var(--color-white);
+            border-bottom: 1px solid var(--n200);
+            padding: var(--space-xl) 0;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--space-xl);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            flex: 1;
+        }
+
+        .step-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all var(--transition-base) var(--ease-out);
+        }
+
+        .step-indicator.complete {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .step-indicator.active {
+            background: var(--color-steel-blue);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(9, 132, 227, 0.1);
+        }
+
+        .step-indicator.incomplete {
+            background: transparent;
+            border: 2px solid var(--n300);
+            color: var(--n500);
+        }
+
+        .step-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-graphite);
+        }
+
+        .step-label.inactive {
+            color: var(--n500);
+        }
+
+        .step-connector {
+            height: 2px;
+            flex: 1;
+            background: var(--n300);
+            transition: background var(--transition-base);
+        }
+
+        .step-connector.complete {
+            background: var(--color-success);
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            padding: var(--space-2xl) 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .wizard-step-content {
+            display: none;
+        }
+
+        .wizard-step-content.active {
+            display: block;
+            animation: fadeSlideIn var(--transition-slow) var(--ease-out);
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(var(--space-md));
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================
+           CARDS
+           ============================================ */
+        .card {
+            background: var(--color-white);
+            border: 1px solid var(--n200);
+            border-radius: 8px;
+            padding: var(--space-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all var(--transition-base) var(--ease-out);
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            margin-bottom: var(--space-lg);
+        }
+
+        .metric-card {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--color-steel-blue);
+            line-height: 1.2;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-slate);
+            margin-top: var(--space-sm);
+        }
+
+        .metric-trend {
+            font-size: 14px;
+            color: var(--color-success);
+            margin-top: var(--space-xs);
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition-fast) var(--ease-out);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-primary {
+            background: var(--color-steel-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0770C5;
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background: var(--n100);
+            color: var(--color-graphite);
+            border: 1px solid var(--n300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--n200);
+            border-color: var(--n400);
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #009B7D;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ============================================
+           FILE UPLOAD
+           ============================================ */
+        .upload-zone {
+            border: 2px dashed var(--n300);
+            border-radius: 8px;
+            background: var(--n50);
+            padding: var(--space-3xl);
+            text-align: center;
+            transition: all var(--transition-base) var(--ease-out);
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--color-steel-blue);
+            background: var(--color-white);
+        }
+
+        .upload-zone.active {
+            border-style: solid;
+            border-color: var(--color-steel-blue);
+            background: rgba(9, 132, 227, 0.05);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto var(--space-md);
+            color: var(--color-steel-blue);
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: var(--color-graphite);
+            margin-bottom: var(--space-sm);
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: var(--color-slate);
+        }
+
+        /* ============================================
+           DASHBOARD GRID
+           ============================================ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .chart-container {
+            background: var(--color-white);
+            border: 1px solid var(--n200);
+            border-radius: 8px;
+            padding: var(--space-lg);
+            min-height: 400px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+            color: var(--color-graphite);
+        }
+
+        /* ============================================
+           TABLES
+           ============================================ */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: var(--n50);
+        }
+
+        .data-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-slate);
+            border-bottom: 2px solid var(--n200);
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--n200);
+            font-size: 14px;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--n50);
+        }
+
+        .band-indicator {
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            border-radius: 2px;
+            margin-right: var(--space-sm);
+            vertical-align: middle;
+        }
+
+        /* ============================================
+           PROGRESS & LOADING
+           ============================================ */
+        .progress-bar {
+            height: 4px;
+            background: var(--n200);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--color-steel-blue);
+            transition: width var(--transition-slow) var(--ease-out);
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--n200);
+            border-top-color: var(--color-steel-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============================================
+           AUDIO PLAYER
+           ============================================ */
+        .audio-player {
+            background: var(--n50);
+            border: 1px solid var(--n200);
+            border-radius: 8px;
+            padding: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .play-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-steel-blue);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast) var(--ease-out);
+        }
+
+        .play-button:hover {
+            background: #0770C5;
+            transform: scale(1.05);
+        }
+
+        audio {
+            flex: 1;
+            height: 32px;
+        }
+
+        /* ============================================
+           REPORT VIEW
+           ============================================ */
+        .report-container {
+            background: var(--color-white);
+            border: 1px solid var(--n200);
+            border-radius: 8px;
+            padding: var(--space-2xl);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .report-container h1 {
+            border-bottom: 2px solid var(--color-steel-blue);
+            padding-bottom: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .report-container h2 {
+            border-bottom: 1px solid var(--n200);
+            padding-bottom: var(--space-sm);
+            margin-top: var(--space-xl);
+        }
+
+        .report-container table {
+            width: 100%;
+            margin: var(--space-md) 0;
+            border-collapse: collapse;
+        }
+
+        .report-container table th,
+        .report-container table td {
+            padding: var(--space-sm) var(--space-md);
+            border: 1px solid var(--n200);
+            text-align: left;
+        }
+
+        .report-container table th {
+            background: var(--n50);
+            font-weight: 600;
+        }
+
+        .report-container table tr:nth-child(even) {
+            background: var(--n50);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .wizard-footer {
+            background: var(--n50);
+            border-top: 1px solid var(--n200);
+            padding: var(--space-lg) 0;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ============================================
+           UTILITIES
+           ============================================ */
+        .mt-xl { margin-top: var(--space-xl); }
+        .mb-xl { margin-bottom: var(--space-xl); }
+        .text-center { text-align: center; }
+        .text-slate { color: var(--color-slate); }
+        .text-success { color: var(--color-success); }
+        .hidden { display: none !important; }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1280px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .steps-container {
+                flex-direction: column;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <h1>MindTrace &mdash; EEG Cleaning Web App</h1>
-    <p>
-      Upload a raw EEG dataset (<code>.npy</code> or <code>.csv</code>).
-      MindTrace removes common noise (e.g. eye blinks and electrical hum)
-      and prepares an easy-to-read explanation plus an ElevenLabs audio file.
-    </p>
-
-    <h2>What this app does</h2>
-    <ul>
-      <li>Checks your EEG signal for obvious problems (missing or invalid values).</li>
-      <li>Removes slow drifts and high-frequency noise with standard filters.</li>
-      <li>Reduces large spikes such as eye blinks so the brain activity is clearer.</li>
-      <li>Produces a cleaned signal you can download and a short, human-readable summary.</li>
-    </ul>
-
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <label for="file">EEG file:</label>
-      <input
-        id="file"
-        type="file"
-        name="file"
-        accept=".npy,.csv"
-        required
-      />
-      <br />
-      <button type="submit">Upload &amp; Clean</button>
-    </form>
-
-    {% if result %}
-    <h2>Interactive Commands</h2>
-    <p>
-      After uploading and cleaning a dataset, you can issue
-      natural-language commands (e.g.
-      <code>Find strong eye-blink events above 120&nbsp;µV</code>)
-      and MindTrace will interpret them via SpoonOS and update the
-      cleaned data where appropriate.
-    </p>
-    <form action="/command" method="post">
-      <label for="instruction">Researcher instruction:</label>
-      <input
-        id="instruction"
-        type="text"
-        name="instruction"
-        placeholder="Describe a noisy segment to find or undo..."
-        style="width: 100%; margin-top: 0.5rem"
-        required
-      />
-      <button type="submit">Run command</button>
-    </form>
-    {% endif %}
-
-    {% if error %}
-    <div class="error">
-      {{ error }}
-    </div>
-    {% endif %}
-
-    {% if result %}
-    <div class="result">
-      <h2>Analysis Summary</h2>
-      <p><strong>{{ result.short_summary }}</strong></p>
-
-      <h3>Cleaned Dataset</h3>
-      <p>
-        <a href="/download/cleaned">Download cleaned_data.npy</a>
-      </p>
-
-      {% if result.validation %}
-      <h3>Validation</h3>
-      <p>
-        <strong>Valid:</strong>
-        {{ "Yes" if result.validation.valid else "No" }}
-      </p>
-      {% if result.validation.issues %}
-      <ul>
-        {% for issue in result.validation.issues %}
-        <li>{{ issue }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-      {% endif %}
-
-      {% if result.last_instruction %}
-      <h3>Last Command</h3>
-      <p><strong>Instruction:</strong> {{ result.last_instruction }}</p>
-      <pre>{{ result.last_action_json }}</pre>
-      {% endif %}
-
-      <h3>Analysis Report & Audio Summary</h3>
-      <p style="margin-bottom: 1rem;">Review the detailed scientific report or listen to the audio summary:</p>
-
-      <!-- Scientific Report Option -->
-      <div style="margin-bottom: 2rem; padding: 1rem; background: #ffffff; border: 1px solid #e1e4e8; border-radius: 6px;">
-        <div style="display: flex; justify-content: space-between; align-items: centre; margin-bottom: 1rem;">
-          <h4 style="margin: 0; display: flex; align-items: centre; gap: 0.5rem;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            Scientific Report
-          </h4>
-          <a href="/download/report" download="eeg_analysis_report.md">
-            <button class="download-btn" type="button">Download Report (.md)</button>
-          </a>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">M</div>
+                    <span>MindTrace</span>
+                </div>
+                <div class="text-slate">EEG Signal Analysis Platform</div>
+            </div>
         </div>
-        {% if result.full_report_html %}
-        <div class="report" id="reportContent">
-          {{ result.full_report_html|safe }}
-        </div>
-        {% else %}
-        <p style="colour: #586069;">Report not available.</p>
-        {% endif %}
-      </div>
+    </header>
 
-      <!-- Audio Summary Option -->
-      <div style="padding: 1rem; background: #ffffff; border: 1px solid #e1e4e8; border-radius: 6px;">
-        <h4 style="margin-top: 0; display: flex; align-items: centre; gap: 0.5rem;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-          </svg>
-          Audio Summary (Conversational)
-        </h4>
-        {% if result.has_audio %}
-        <p style="margin-bottom: 0.5rem;">Listen to a conversational summary of the key findings:</p>
-        <audio controls style="width: 100%; margin-top: 0.5rem;">
-          <source src="/audio/summary" type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
-        <p style="font-size: 0.9rem; colour: #586069; margin-top: 0.5rem;">
-          <a href="/audio/summary" download="summary.mp3">Download audio summary (MP3)</a>
-        </p>
-        {% else %}
-        <p style="colour: #586069;">
-          Audio summary not available. Check your ElevenLabs API key configuration.
-        </p>
-        {% endif %}
-      </div>
+    <!-- Wizard Steps -->
+    <div class="wizard-steps">
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-indicator" id="step-indicator-1">1</div>
+                <div class="step-label" id="step-label-1">Upload</div>
+            </div>
+            <div class="step-connector" id="connector-1"></div>
+            <div class="step">
+                <div class="step-indicator" id="step-indicator-2">2</div>
+                <div class="step-label inactive" id="step-label-2">Processing</div>
+            </div>
+            <div class="step-connector" id="connector-2"></div>
+            <div class="step">
+                <div class="step-indicator" id="step-indicator-3">3</div>
+                <div class="step-label inactive" id="step-label-3">Analysis</div>
+            </div>
+            <div class="step-connector" id="connector-3"></div>
+            <div class="step">
+                <div class="step-indicator incomplete" id="step-indicator-4">4</div>
+                <div class="step-label inactive" id="step-label-4">Report</div>
+            </div>
+        </div>
     </div>
-    {% endif %}
-  </body>
-  </html>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="wizard-container">
+
+            <!-- STEP 1: UPLOAD -->
+            <div class="wizard-step-content active" id="step-1">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Upload EEG Recording</h2>
+                        <p class="text-slate">Upload your raw EEG data file (.npy or .csv format) to begin analysis</p>
+                    </div>
+
+                    <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <div class="upload-zone" id="uploadZone">
+                            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <div class="upload-text">Click to upload or drag and drop</div>
+                            <div class="upload-hint">Supports .npy and .csv files • Maximum 100MB</div>
+                            <input type="file" name="file" id="fileInput" accept=".npy,.csv" style="display: none;">
+                        </div>
+
+                        <div class="mt-xl text-center">
+                            <button type="submit" class="btn btn-primary">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                                Proceed to Analysis
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 2: PROCESSING -->
+            <div class="wizard-step-content" id="step-2">
+                <div class="card text-center">
+                    <div class="spinner" style="margin: var(--space-3xl) auto;"></div>
+                    <h2>Processing Your EEG Data</h2>
+                    <p class="text-slate">Applying signal cleaning pipeline and performing frequency analysis...</p>
+
+                    <div class="progress-bar mt-xl" style="max-width: 600px; margin: var(--space-xl) auto;">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+
+                    <div class="mt-xl text-slate">
+                        <div id="processingStatus">Initializing...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: ANALYSIS DASHBOARD -->
+            <div class="wizard-step-content" id="step-3">
+                {% if result %}
+                <h2>Analysis Results</h2>
+                <p class="text-slate mb-xl">{{ result.short_summary }}</p>
+
+                <!-- Metrics Cards -->
+                <div class="metrics-grid">
+                    <div class="card metric-card">
+                        <div class="metric-value" id="snr-value">--</div>
+                        <div class="metric-label">SNR Improvement (dB)</div>
+                        <div class="metric-trend">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle;">
+                                <path d="M7 14l5-5 5 5z"></path>
+                            </svg>
+                            Signal Quality Enhanced
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-value" id="noise-value">--</div>
+                        <div class="metric-label">Noise Reduction (%)</div>
+                        <div class="metric-trend text-success">Cleaned Signal</div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-value" id="dominant-band">--</div>
+                        <div class="metric-label">Dominant Frequency Band</div>
+                        <div class="metric-trend">Identified Pattern</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">EEG Frequency Band Distribution</div>
+                        <canvas id="frequencyChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-title">Power Distribution Across Bands</div>
+                        <canvas id="bandPowerChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="text-center mt-xl">
+                    <button class="btn btn-primary" onclick="showStep(4)">
+                        View Detailed Report
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- STEP 4: DETAILED REPORT -->
+            <div class="wizard-step-content" id="step-4">
+                {% if result %}
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+                        <h2 style="margin: 0;">Scientific Report</h2>
+                        <a href="/download/report" download>
+                            <button class="btn btn-success">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Download Report (.md)
+                            </button>
+                        </a>
+                    </div>
+
+                    <div class="report-container">
+                        {{ result.full_report_html|safe }}
+                    </div>
+                </div>
+
+                <!-- Audio Summary -->
+                {% if result.has_audio %}
+                <div class="card mt-xl">
+                    <h3>Audio Summary</h3>
+                    <p class="text-slate">Listen to a conversational summary of the key findings</p>
+
+                    <div class="audio-player mt-xl">
+                        <button class="play-button" id="audioPlayBtn">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </button>
+                        <audio controls style="flex: 1;">
+                            <source src="/audio/summary" type="audio/mpeg">
+                        </audio>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Final Actions -->
+                <div class="text-center mt-xl">
+                    <a href="/" class="btn btn-secondary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Analyze New Recording
+                    </a>
+                    <a href="/download/cleaned" class="btn btn-primary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download Cleaned Data
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // File upload interaction
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('active');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('active');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('active');
+            fileInput.files = e.dataTransfer.files;
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                document.querySelector('.upload-text').textContent = e.target.files[0].name;
+            }
+        });
+
+        // Wizard step navigation
+        function showStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.wizard-step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected step
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+
+            // Update step indicators
+            for (let i = 1; i <= 4; i++) {
+                const indicator = document.getElementById(`step-indicator-${i}`);
+                const label = document.getElementById(`step-label-${i}`);
+                const connector = document.getElementById(`connector-${i}`);
+
+                if (i < stepNumber) {
+                    indicator.className = 'step-indicator complete';
+                    label.classList.remove('inactive');
+                    if (connector) connector.classList.add('complete');
+                } else if (i === stepNumber) {
+                    indicator.className = 'step-indicator active';
+                    label.classList.remove('inactive');
+                } else {
+                    indicator.className = 'step-indicator incomplete';
+                    label.classList.add('inactive');
+                    if (connector) connector.classList.remove('complete');
+                }
+            }
+        }
+
+        // Load and render charts
+        async function loadChartData() {
+            try {
+                const response = await fetch('/api/chart-data');
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('No data available for charts');
+                    return;
+                }
+
+                // Update metric cards
+                document.getElementById('snr-value').textContent = data.metrics.snr.toFixed(1);
+                document.getElementById('noise-value').textContent = data.metrics.noise_reduction.toFixed(1) + '%';
+                document.getElementById('dominant-band').textContent = data.metrics.dominant_band.charAt(0).toUpperCase() + data.metrics.dominant_band.slice(1);
+
+                // Render frequency band chart (horizontal bar)
+                const ctx1 = document.getElementById('frequencyChart');
+                if (ctx1) {
+                    new Chart(ctx1, {
+                        type: 'bar',
+                        data: {
+                            labels: data.frequency_bands.labels,
+                            datasets: [{
+                                label: 'Power (%)',
+                                data: data.frequency_bands.data,
+                                backgroundColor: data.frequency_bands.colors,
+                                borderWidth: 0,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => `${context.parsed.x.toFixed(1)}%`
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: { color: '#E9ECEF' },
+                                    ticks: { callback: (value) => value + '%' }
+                                },
+                                y: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Render band power chart (doughnut)
+                const ctx2 = document.getElementById('bandPowerChart');
+                if (ctx2) {
+                    new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.frequency_bands.labels,
+                            datasets: [{
+                                data: data.frequency_bands.data,
+                                backgroundColor: data.frequency_bands.colors,
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { padding: 16, font: { size: 12 } }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => `${context.label}: ${context.parsed.toFixed(1)}%`
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        // Initialize if we're on analysis step
+        {% if result %}
+        document.addEventListener('DOMContentLoaded', () => {
+            showStep(3);
+            loadChartData();
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

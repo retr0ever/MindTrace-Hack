@@ -233,3 +233,39 @@ async def download_report():
         media_type="text/markdown",
         filename="eeg_analysis_report.md",
     )
+
+
+@app.get("/api/chart-data")
+async def get_chart_data():
+    """
+    Get chart data for visualizations.
+    Returns frequency analysis and signal quality data.
+    """
+    if agent.raw_data is None or agent.cleaned_data is None:
+        return {"error": "No data available. Please upload a dataset first."}
+
+    # Get analysis results
+    analysis_results = agent.analyzer.analyze(agent.raw_data, agent.cleaned_data)
+
+    # Prepare chart data
+    chart_data = {
+        "frequency_bands": {
+            "labels": ["Delta (δ)", "Theta (θ)", "Alpha (α)", "Beta (β)", "Gamma (γ)"],
+            "data": [
+                analysis_results['band_powers'].get('delta', 0),
+                analysis_results['band_powers'].get('theta', 0),
+                analysis_results['band_powers'].get('alpha', 0),
+                analysis_results['band_powers'].get('beta', 0),
+                analysis_results['band_powers'].get('gamma', 0)
+            ],
+            "colors": ["#FDCB6E", "#00B894", "#6C5CE7", "#0984E3", "#FD79A8"]
+        },
+        "metrics": {
+            "snr": analysis_results.get('snr_improvement', 0),
+            "noise_reduction": analysis_results.get('noise_reduction', 0),
+            "artefacts": analysis_results.get('artefacts_detected', 0),
+            "dominant_band": analysis_results.get('dominant_band', 'unknown')
+        }
+    }
+
+    return chart_data
