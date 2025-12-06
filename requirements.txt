@@ -12,6 +12,7 @@ markdown
 python-multipart
 aiofiles
 reportlab
+fpdf2
 openai
 httpx
 pydantic
