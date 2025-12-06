@@ -1,26 +1,48 @@
 """
 Scientific Report Generator for EEG Analysis Results
-Generates properly structured, downloadable reports
+Generates properly structured, downloadable reports (Markdown & PDF)
 """
 from datetime import datetime
+from fpdf import FPDF
 
+class PDFReport(FPDF):
+    def header(self):
+        # Arial bold 15
+        self.set_font('Arial', 'B', 15)
+        # Title
+        self.cell(0, 10, 'MindTrace EEG Analysis Report', 0, 1, 'C')
+        # Line break
+        self.ln(5)
+
+    def footer(self):
+        # Position at 1.5 cm from bottom
+        self.set_y(-15)
+        # Arial italic 8
+        self.set_font('Arial', 'I', 8)
+        # Page number
+        self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
+
+    def section_title(self, label):
+        self.set_font('Arial', 'B', 12)
+        self.set_fill_color(240, 240, 240)
+        self.cell(0, 10, label, 0, 1, 'L', 1)
+        self.ln(4)
+
+    def chapter_body(self, body):
+        self.set_font('Times', '', 11)
+        self.multi_cell(0, 6, body)
+        self.ln()
 
 class EEGReportGenerator:
     """Generates structured scientific reports from EEG analysis data."""
 
     def __init__(self):
-        self.report_format = "markdown"  # Can be "markdown" or "html"
+        self.report_format = "markdown"
 
     def generate_report(self, analysis_results, format="markdown"):
         """
-        Generate a structured scientific report from analysis results.
-
-        Args:
-            analysis_results: Dictionary containing analysis data from EEGAnalyzer
-            format: Output format ("markdown" or "html")
-
-        Returns:
-            Dictionary with formatted report sections
+        Generate a structured scientific report text (Markdown/HTML ready).
+        Returns a dictionary with report sections and full text.
         """
         self.report_format = format
 
@@ -34,7 +56,6 @@ class EEGReportGenerator:
             "recommendations": self._generate_recommendations_section(analysis_results),
         }
 
-        # Combine into full report
         full_report = self._compile_report(sections)
 
         return {
@@ -42,6 +63,140 @@ class EEGReportGenerator:
             "full_report": full_report,
             "format": format
         }
+
+    def generate_pdf_report(self, analysis_results, output_path):
+        """
+        Generates a PDF version of the report using FPDF.
+        """
+        pdf = PDFReport()
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        
+        # Metadata
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        pdf.set_font('Times', 'I', 10)
+        pdf.cell(0, 10, f'Generated: {timestamp}', 0, 1)
+        pdf.ln(5)
+
+        # Executive Summary
+        pdf.section_title('1. Executive Summary')
+        
+        snr = analysis_results.get('snr_improvement', 0)
+        noise_red = analysis_results.get('noise_reduction', 0)
+        dominant = analysis_results.get('dominant_band', 'unknown')
+        
+        summary_text = (
+            f"This report presents the results of automated EEG signal processing. "
+            f"The raw recording underwent a comprehensive cleaning pipeline. "
+            f"Signal quality improved by {snr:.1f} dB (SNR) with a {noise_red:.1f}% reduction in noise.\n\n"
+            f"The dominant brain rhythm was identified as the {dominant.capitalize()} band."
+        )
+        pdf.chapter_body(summary_text)
+
+        # Signal Quality Table
+        pdf.section_title('2. Signal Quality Metrics')
+        
+        # Table Header
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(60, 8, 'Metric', 1)
+        pdf.cell(40, 8, 'Value', 1)
+        pdf.cell(90, 8, 'Interpretation', 1)
+        pdf.ln()
+        
+        # Table Rows
+        pdf.set_font('Times', '', 10)
+        
+        # Row 1: SNR
+        pdf.cell(60, 8, 'SNR Improvement', 1)
+        pdf.cell(40, 8, f'{snr:.1f} dB', 1)
+        pdf.cell(90, 8, 'Excellent' if snr > 10 else 'Good' if snr > 5 else 'Moderate', 1)
+        pdf.ln()
+        
+        # Row 2: Noise
+        pdf.cell(60, 8, 'Noise Reduction', 1)
+        pdf.cell(40, 8, f'{noise_red:.1f}%', 1)
+        pdf.cell(90, 8, 'High' if noise_red > 30 else 'Moderate' if noise_red > 15 else 'Low', 1)
+        pdf.ln()
+        
+        # Row 3: Artefacts
+        artefacts = analysis_results.get('artefacts_detected', 0)
+        pdf.cell(60, 8, 'Residual Artefacts', 1)
+        pdf.cell(40, 8, f'{artefacts} events', 1)
+        pdf.cell(90, 8, 'Clean' if artefacts == 0 else 'Review Required', 1)
+        pdf.ln(8)
+
+        # Frequency Analysis
+        pdf.section_title('3. Frequency Domain Analysis')
+        pdf.chapter_body("Power spectral density analysis revealed the following distribution across standard EEG bands:")
+        
+        # Frequency Table
+        band_powers = analysis_results.get('band_powers', {})
+        
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 8, 'Band', 1)
+        pdf.cell(40, 8, 'Range (Hz)', 1)
+        pdf.cell(40, 8, 'Power (%)', 1)
+        pdf.ln()
+        
+        pdf.set_font('Times', '', 10)
+        bands_data = [
+            ('Delta', '0.5 - 4', band_powers.get('delta', 0)),
+            ('Theta', '4 - 8', band_powers.get('theta', 0)),
+            ('Alpha', '8 - 13', band_powers.get('alpha', 0)),
+            ('Beta', '13 - 30', band_powers.get('beta', 0)),
+            ('Gamma', '30 - 45', band_powers.get('gamma', 0)),
+        ]
+        
+        for name, rng, power in bands_data:
+            pdf.cell(40, 8, name, 1)
+            pdf.cell(40, 8, rng, 1)
+            pdf.cell(40, 8, f'{power:.1f}%', 1)
+            pdf.ln()
+        pdf.ln(5)
+        
+        pdf.set_font('Times', 'B', 11)
+        pdf.cell(0, 8, f"Dominant Rhythm: {dominant.capitalize()}", 0, 1)
+        pdf.set_font('Times', '', 11)
+        
+        # Interpretation text
+        interp_map = {
+            'alpha': "This suggests a relaxed, wakeful state.",
+            'beta': "This indicates active concentration or alertness.",
+            'theta': "This may reflect drowsiness or meditation.",
+            'delta': "This is typical of deep sleep.",
+            'gamma': "This suggests high-level cognitive processing."
+        }
+        pdf.multi_cell(0, 6, interp_map.get(dominant, ""))
+        pdf.ln()
+
+        # Clinical Findings
+        pdf.section_title('4. Clinical & Technical Observations')
+        indicators = analysis_results.get('indicators', [])
+        
+        if not indicators:
+            pdf.chapter_body("No specific clinical anomalies were identified. The signal falls within typical parameters.")
+        else:
+            for ind in indicators:
+                pdf.cell(5) # indent
+                pdf.cell(0, 6, f"- {ind.get('description', '')}", 0, 1)
+            pdf.ln()
+            
+        pdf.section_title('5. Methodology')
+        method_text = (
+            "Processing included 4th-order Butterworth bandpass filtering (1-40 Hz) and 50Hz notch filtering. "
+            "Independent Component Analysis (FastICA) was used to identify and remove physiological artefacts. "
+            "Spectral analysis was performed using Welch's method with a Hamming window."
+        )
+        pdf.chapter_body(method_text)
+        
+        # Disclaimer
+        pdf.ln(10)
+        pdf.set_font('Arial', 'I', 9)
+        pdf.multi_cell(0, 5, "Disclaimer: This report is generated by an automated system for research purposes only. It is not a medical diagnosis.")
+
+        # Output
+        pdf.output(output_path)
+        return output_path
 
     def _generate_title(self):
         """Generate report title and metadata."""

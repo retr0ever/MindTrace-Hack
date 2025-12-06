@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindTrace - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0d1117;
+            --bg-card: #161b22;
+            --border: #30363d;
+            --primary: #58a6ff;
+            --primary-hover: #79c0ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --accent: #d2a8ff;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --text-header: #f0f6fc;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            background: var(--bg-body);
+            min-height: 100vh;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.2;
+        }
+
+        .header {
+            background: rgba(22, 27, 34, 0.95);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-header);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-body);
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 32px;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .nav-links a.active::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .main-content { padding: 40px 0; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-header);
+            margin-bottom: 8px;
+        }
+        
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--bg-body);
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        tr:hover td { background: rgba(88, 166, 255, 0.05); }
+
+        .band-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            text-transform: capitalize;
+        }
+
+        .band-alpha { color: var(--primary); border-color: rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.1); }
+        .band-beta { color: var(--warning); border-color: rgba(210, 153, 34, 0.3); background: rgba(210, 153, 34, 0.1); }
+        .band-theta { color: var(--success); border-color: rgba(63, 185, 80, 0.3); background: rgba(63, 185, 80, 0.1); }
+        .band-delta { color: var(--accent); border-color: rgba(210, 168, 255, 0.3); background: rgba(210, 168, 255, 0.1); }
+        .band-gamma { color: var(--danger); border-color: rgba(248, 81, 73, 0.3); background: rgba(248, 81, 73, 0.1); } /* Added gamma */
+        .band-unknown { color: var(--text-muted); border-color: var(--border); background: var(--bg-input); }
+        
+        .btn-refresh {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+        
+        .btn-refresh:hover { background: rgba(88, 166, 255, 0.1); }
+
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12h3l2-5 4 10 4-10 2 5h3"/>
+                    </svg>
+                </div>
+                MindTrace
+            </a>
+            <nav class="nav-links">
+                <a href="/">Analysis</a>
+                <a href="/dashboard" class="active">Dashboard</a>
+                <a href="/documentation">Documentation</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h2>Session Log</h2>
+                        <p class="subtitle">Archive of processed signals and key findings.</p>
+                    </div>
+                    <button onclick="window.location.reload()" class="btn-refresh">Refresh List</button>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Source File</th>
+                            <th>Dominant Freq</th>
+                            <th>SNR Gain</th>
+                            <th>Noise Reduction</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in history %}
+                        <tr>
+                            <td style="color: var(--text-muted);">{{ entry.timestamp }}</td>
+                            <td style="color: var(--text-main);">{{ entry.filename }}</td>
+                            <td>
+                                <span class="band-badge band-{{ entry.dominant_band }}">{{ entry.dominant_band }}</span>
+                            </td>
+                            <td style="color: var(--success);">
+                                +{{ "%.2f"|format(entry.snr_improvement) }} dB
+                            </td>
+                            <td>{{ "%.1f"|format(entry.noise_reduction) }}%</td>
+                            <td>
+                                {% if entry.artefacts == 0 %}
+                                    <span style="color: var(--text-muted);">Clean</span>
+                                {% else %}
+                                    <span style="color: var(--warning);">{{ entry.artefacts }} Artefacts</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not history %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-muted);">
+                                No data found. Upload a file to get started.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindTrace - Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0d1117;
+            --bg-card: #161b22;
+            --bg-sidebar: #13161a;
+            
+            --border: #30363d;
+            --primary: #58a6ff;
+            --primary-hover: #79c0ff;
+            
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --accent: #d2a8ff;
+            
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --text-header: #f0f6fc;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            background: var(--bg-body);
+            min-height: 100vh;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+        
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.2;
+        }
+
+        .header {
+            background: rgba(22, 27, 34, 0.95);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-header);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-body);
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 32px;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .nav-links a.active::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .main-content { padding: 40px 0; }
+
+        .doc-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 40px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            background: var(--bg-sidebar);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-links { list-style: none; }
+        .sidebar-links li { margin-bottom: 8px; }
+
+        .sidebar-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 13px;
+            display: block;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-links a:hover {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--primary);
+        }
+
+        .sidebar-links a.active {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        /* Content */
+        .content-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-header);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-header);
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p { margin-bottom: 16px; color: var(--text-muted); }
+
+        ul { margin-bottom: 24px; padding-left: 24px; color: var(--text-muted); }
+        li { margin-bottom: 8px; }
+
+        code {
+            background: rgba(110, 118, 129, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-header);
+        }
+
+        .pipeline-diagram {
+            display: flex;
+            gap: 16px;
+            margin: 32px 0;
+            overflow-x: auto;
+            padding: 16px;
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            min-width: 150px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .pipeline-step::after {
+            content: "→"; /* Simpler arrow */
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 16px; /* Larger arrow for clarity */
+        }
+
+        .pipeline-step:last-child::after { display: none; }
+
+        .step-icon {
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-header);
+        }
+
+        .step-desc { font-size: 12px; color: var(--text-muted); }
+
+        .info-box {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-radius: 6px;
+            padding: 16px;
+            margin: 24px 0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .info-icon { color: var(--primary); }
+
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12h3l2-5 4 10 4-10 2 5h3"/>
+                    </svg>
+                </div>
+                MindTrace
+            </a>
+            <nav class="nav-links">
+                <a href="/">Analysis</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/documentation" class="active">Documentation</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container doc-layout">
+            
+            <aside class="sidebar">
+                <div class="sidebar-title">Contents</div>
+                <ul class="sidebar-links">
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#pipeline">Processing Pipeline</a></li>
+                    <li><a href="#algorithms">Algorithms Used</a></li>
+                    <li><a href="#analysis">Analysis & Metrics</a></li>
+                    <li><a href="#ai-integration">AI Integration</a></li>
+                </ul>
+            </aside>
+
+            <div class="content-card">
+                <section id="overview">
+                    <h1>How to Use MindTrace</h1>
+                    <p>MindTrace is an automated EEG signal processing platform. It allows researchers to upload raw brainwave data and receive cleaned, research-ready datasets in seconds.</p>
+                    
+                    <h3>Getting Started</h3>
+                    <ol style="padding-left: 20px; color: var(--text-muted); margin-bottom: 24px;">
+                        <li style="margin-bottom: 8px;"><strong>Prepare your data:</strong> Ensure your EEG recording is in <code>.csv</code> or <code>.npy</code> format.</li>
+                        <li style="margin-bottom: 8px;"><strong>Upload:</strong> Drag and drop your file onto the Analysis page.</li>
+                        <li style="margin-bottom: 8px;"><strong>Wait for processing:</strong> The system will automatically apply filters and remove noise.</li>
+                        <li style="margin-bottom: 8px;"><strong>Download results:</strong> You can download the cleaned dataset, a full scientific report, or listen to the AI audio summary.</li>
+                    </ol>
+
+                    <div class="info-box">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>Note:</strong> No manual configuration is required. The pipeline automatically detects sampling rates and channel configurations.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="pipeline">
+                    <h2>How It Works: The Pipeline</h2>
+                    <p>Behind the scenes, MindTrace runs a sophisticated signal processing chain:</p>
+
+                    <div class="pipeline-diagram">
+                        <div class="pipeline-step">
+                            <div class="step-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            </div>
+                            <div class="step-title">1. Ingestion</div>
+                            <div class="step-desc">Load & Validate Data</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            </div>
+                            <div class="step-title">2. Filtering</div>
+                            <div class="step-desc">Bandpass & Notch</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-4c-2.8 0-4 1.5-4 4s1.2 4 4 4h4"></path></svg>
+                            </div>
+                            <div class="step-title">3. ICA</div>
+                            <div class="step-desc">Artefact Removal</div>
+                        </div>
+                        <div class="pipeline-step">
+                            <div class="step-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            </div>
+                            <div class="step-title">4. Reporting</div>
+                            <div class="step-desc">Metrics & Explanation</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="algorithms">
+                    <h2>Algorithms Used</h2>
+                    
+                    <h3>Signal Pre-processing</h3>
+                    <p>We use a standard neuroscience filter stack to prepare the data:</p>
+                    <ul>
+                        <li><strong>Bandpass Filter (1–40 Hz):</strong> A Butterworth filter designed to remove very slow drifts (like movement artifacts) and high-frequency noise (e.g., muscle activity, external electrical interference).</li>
+                        <li><strong>Notch Filter (50/60 Hz):</strong> Applied to precisely eliminate power line interference (mains hum), a common electrical artifact in many labs.</li>
+                    </ul>
+
+                    <h3>Artefact Removal: Independent Component Analysis (ICA)</h3>
+                    <p>ICA is a powerful technique used to separate mixed signals into their underlying independent sources. MindTrace employs FastICA to identify and effectively remove common physiological artifacts, such as:</p>
+                    <ul>
+                        <li><strong>Eye Blinks (EOG):</strong> These are usually large, transient deflections in frontal channels.</li>
+                        <li><strong>Muscle Activity (EMG):</strong> Appears as high-frequency noise across channels.</li>
+                    </ul>
+                </section>
+
+                <section id="analysis">
+                    <h2>Analysis & Metrics</h2>
+                    <p>The system calculates several key metrics to quantify signal quality improvement and characterize brain activity:</p>
+                    
+                    <h3>SNR Improvement</h3>
+                    <p>Signal-to-Noise Ratio (SNR) improvement is calculated by comparing the signal variance before and after cleaning. A higher dB value indicates a more effective noise reduction.</p>
+
+                    <h3>Dominant Frequency Bands</h3>
+                    <p>Power Spectral Density (PSD) analysis using Welch's method is performed to determine the relative power in different EEG frequency bands, helping to infer brain states:</p>
+                    <ul>
+                        <li><span style="color: #d2a8ff; font-weight: 600;">Delta (0.5-4 Hz):</span> Associated with deep sleep states.</li>
+                        <li><span style="color: #3fb950; font-weight: 600;">Theta (4-8 Hz):</span> Linked to drowsiness, meditation, and memory processing.</li>
+                        <li><span style="color: #58a6ff; font-weight: 600;">Alpha (8-13 Hz):</span> Dominant during relaxed wakefulness, often with eyes closed.</li>
+                        <li><span style="color: #d29922; font-weight: 600;">Beta (13-30 Hz):</span> Reflects active thinking, focus, and alertness.</li>
+                        <li><span style="color: #f85149; font-weight: 600;">Gamma (>30 Hz):</span> Implicated in high-level cognitive functions and sensory binding.</li>
+                    </ul>
+                </section>
+
+                <section id="ai-integration">
+                    <h2>AI Integration</h2>
+                    <p>MindTrace utilizes AI beyond just signal processing, primarily for user interaction and clear communication of results:</p>
+                    <ul>
+                        <li><strong>SpoonOS Agent Integration:</strong> (If configured) Allows natural language interaction to control specific aspects of the processing pipeline, such as adjusting parameters or undoing certain cleaning steps.</li>
+                        <li><strong>Automated Report Generation:</strong> An AI-powered system structures the analysis results into a comprehensive, human-readable scientific report.</li>
+                        <li><strong>ElevenLabs TTS Briefing:</strong> (If configured) Converts the key findings from the analysis into a natural-sounding audio summary, providing an accessible overview of the results.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simple smooth scroll for sidebar links
+        document.querySelectorAll('.sidebar-links a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('.sidebar-links a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

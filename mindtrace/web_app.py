@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from .app import load_config
 from .agent.mindtrace_agent import MindTraceAgent
 from .data_loader import DataLoader
+from .history import HistoryManager
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,13 +29,14 @@ def markdown_to_html(markdown_text: str) -> str:
 config = load_config()
 agent = MindTraceAgent(config)
 loader = DataLoader()
+history_manager = HistoryManager()
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 CLEANED_PATH = BASE_DIR.parent / "cleaned_data.npy"
 AUDIO_PATH = BASE_DIR.parent / "summary.mp3"
-REPORT_PATH = BASE_DIR.parent / "eeg_report.md"
+REPORT_PATH = BASE_DIR.parent / "eeg_analysis_report.pdf"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -51,6 +53,29 @@ async def index(request: Request):
         },
     )
 
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    """
+    Dashboard showing analysis history.
+    """
+    history = history_manager.load_history()
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "history": history
+        }
+    )
+
+@app.get("/documentation", response_class=HTMLResponse)
+async def documentation(request: Request):
+    """
+    Documentation page explaining how MindTrace works.
+    """
+    return templates.TemplateResponse(
+        "documentation.html",
+        {"request": request}
+    )
 
 @app.get("/upload", response_class=HTMLResponse)
 async def upload_get():
@@ -99,12 +124,16 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
 
     explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
+    
+    # Save to history
+    history_manager.add_entry(file.filename, explanation.get("analysis_results", {}))
 
-    # Save the report to a file for download
+    # Generate PDF Report
+    agent.report_generator.generate_pdf_report(explanation.get("analysis_results", {}), str(REPORT_PATH))
+
+    # Save the markdown report as backup/display content
     markdown_report = explanation.get("full_report", "")
-    with open(REPORT_PATH, 'w') as f:
-        f.write(markdown_report)
-
+    
     # Convert markdown to HTML for display
     html_report = markdown_to_html(markdown_report)
 
@@ -159,11 +188,15 @@ async def run_command(request: Request, instruction: str = Form(...)):
 
     explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
+    
+    # Save to history (mark as refinement)
+    history_manager.add_entry(f"Refinement: {instruction[:20]}...", explanation.get("analysis_results", {}))
 
-    # Save the updated report
+    # Generate PDF Report
+    agent.report_generator.generate_pdf_report(explanation.get("analysis_results", {}), str(REPORT_PATH))
+
+    # Save the updated report content
     markdown_report = explanation.get("full_report", "")
-    with open(REPORT_PATH, 'w') as f:
-        f.write(markdown_report)
 
     # Convert markdown to HTML for display
     html_report = markdown_to_html(markdown_report)
@@ -223,15 +256,15 @@ async def get_audio_summary():
 @app.get("/download/report")
 async def download_report():
     """
-    Download the full scientific report as a Markdown file.
+    Download the full scientific report as a PDF file.
     """
     if not REPORT_PATH.exists():
         return HTMLResponse("No report available yet.", status_code=404)
 
     return FileResponse(
         REPORT_PATH,
-        media_type="text/markdown",
-        filename="eeg_analysis_report.md",
+        media_type="application/pdf",
+        filename="eeg_analysis_report.pdf",
     )
 
 
