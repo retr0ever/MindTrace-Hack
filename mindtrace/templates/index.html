@@ -522,6 +522,36 @@
                 <p class="subtitle">Upload your raw EEG data (.npy or .csv) to begin the signal processing pipeline.</p>
                 
                 <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <!-- Username Input -->
+                    <div style="margin-bottom: 24px;">
+                        <label for="usernameInput" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500;">
+                            Username <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="username" 
+                            id="usernameInput" 
+                            required
+                            placeholder="Enter your unique username"
+                            style="
+                                width: 100%;
+                                padding: 12px 16px;
+                                background: var(--bg-input);
+                                border: 1px solid var(--border);
+                                border-radius: var(--radius-sm);
+                                color: var(--text-main);
+                                font-family: var(--font-mono);
+                                font-size: 14px;
+                                transition: all 0.2s;
+                            "
+                            onfocus="this.style.borderColor='var(--primary)'; this.style.outline='none';"
+                            onblur="this.style.borderColor='var(--border)';"
+                        >
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px; font-style: italic;">
+                            // Your username will be used to store and retrieve your data
+                        </p>
+                    </div>
+
                     <div class="upload-zone" id="uploadZone">
                         <div style="color: var(--text-muted); margin-bottom: 16px;">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -532,7 +562,7 @@
                         </div>
                         <h3 style="font-size: 16px; margin-bottom: 8px; color: var(--text-header);">Drag file here or click to browse</h3>
                         <p class="upload-hint">// Supported formats: .npy, .csv (Max 100MB)</p>
-                        <input type="file" name="file" id="fileInput" accept=".npy,.csv" style="display: none;">
+                        <input type="file" name="file" id="fileInput" accept=".npy,.csv" style="display: none;" required>
                         
                         <div id="fileName" style="margin-top: 16px; color: var(--primary); font-weight: 600;"></div>
                     </div>
@@ -710,8 +740,24 @@
             if(fileInput.files.length > 0) {
                 const name = fileInput.files[0].name;
                 fileNameDisplay.textContent = `Selected File: ${name}`;
-                processBtn.classList.remove('hidden');
+                // Check if both username and file are provided
+                const usernameInput = document.getElementById('usernameInput');
+                if(usernameInput && usernameInput.value.trim() !== '') {
+                    processBtn.classList.remove('hidden');
+                }
             }
+        }
+
+        // Enable/disable submit button based on username and file
+        const usernameInput = document.getElementById('usernameInput');
+        if(usernameInput) {
+            usernameInput.addEventListener('input', () => {
+                if(fileInput.files.length > 0 && usernameInput.value.trim() !== '') {
+                    processBtn.classList.remove('hidden');
+                } else {
+                    processBtn.classList.add('hidden');
+                }
+            });
         }
 
         if(uploadForm) {

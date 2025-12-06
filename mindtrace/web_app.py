@@ -3,9 +3,10 @@ import hashlib
 from pathlib import Path
 import markdown
 import numpy as np
+from typing import Optional
 
 from fastapi import FastAPI, File, UploadFile, Request, Form
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from .app import load_config
@@ -90,11 +91,10 @@ async def upload_get():
 
 
 @app.post("/upload", response_class=HTMLResponse)
-async def upload_dataset(request: Request, file: UploadFile = File(...)):
+async def upload_dataset(request: Request, file: UploadFile = File(...), username: str = Form(None)):
     """
-    Accepts an EEG dataset upload, runs the MindTrace cleaning
-    pipeline, and returns a page with results and an ElevenLabs
-    explanation.
+    Accepts an EEG dataset upload, stores it in the database with username,
+    runs the MindTrace cleaning pipeline, and returns a page with results.
     """
     if not file.filename:
         return templates.TemplateResponse(
@@ -105,9 +105,33 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
                 "error": "Please select a file to upload.",
             },
         )
+    
+    # Require username
+    if not username or username.strip() == "":
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "result": None,
+                "error": "Username is required. Please provide a username.",
+            },
+        )
+    
+    username = username.strip()
 
     file_path = UPLOAD_DIR / file.filename
     contents = await file.read()
+    
+    # Save file to database with username
+    file_hash = hashlib.md5(contents).hexdigest()
+    db.save_user_upload(
+        username=username,
+        filename=file.filename,
+        file_data=contents,
+        file_hash=file_hash
+    )
+    
+    # Also save to disk for processing (temporary)
     file_path.write_bytes(contents)
 
     try:
@@ -168,7 +192,7 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
     markdown_report = explanation.get("full_report", "")
     
     # Save markdown backup
-    with open(BASE_DIR.parent / "eeg_report.md", 'w') as f:
+    with open(BASE_DIR.parent / "eeg_report.md", 'w', encoding='utf-8') as f:
         f.write(markdown_report)
 
     # Save evaluation report if available
@@ -536,3 +560,121 @@ async def delete_analysis(analysis_id: int):
     if not deleted:
         return {"error": "Analysis not found"}
     return {"success": True, "message": f"Analysis {analysis_id} deleted"}
+
+
+@app.post("/api/process-and-evaluate")
+async def process_and_evaluate(username: str = Form(...)):
+    """
+    Processes and evaluates a CSV file stored in the database for a given username.
+    
+    This endpoint:
+    1. Retrieves the CSV file from the database using the username
+    2. Loads and validates the data
+    3. Applies the cleaning pipeline (filters + ICA)
+    4. Runs comprehensive evaluation
+    5. Returns the evaluation report as markdown
+    
+    Args:
+        username: Unique username to look up the uploaded CSV file
+    
+    Returns:
+        Markdown-formatted evaluation report
+    """
+    if not username or username.strip() == "":
+        return Response(
+            content="Error: Username is required.",
+            status_code=400,
+            media_type="text/plain"
+        )
+    
+    username = username.strip()
+    
+    try:
+        # Retrieve file from database (each username has exactly one file)
+        upload_record = db.get_user_upload(username)
+        
+        if upload_record is None:
+            return Response(
+                content=f"Error: No file found for username '{username}'. Please upload a file first.",
+                status_code=404,
+                media_type="text/plain"
+            )
+        
+        # Get file data from database
+        file_data = upload_record['file_data']
+        stored_filename = upload_record['filename']
+        
+        # Save to temporary file for processing
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.csv') as tmp:
+            tmp.write(file_data)
+            tmp_path = tmp.name
+        
+        try:
+            # Load data
+            try:
+                data = loader.load_file(tmp_path)
+            except Exception as exc:
+                return Response(
+                    content=f"Error: Failed to load data file: {exc}",
+                    status_code=400,
+                    media_type="text/plain"
+                )
+            
+            # Process through full pipeline
+            agent.load_data(data)
+            validation = agent.validate_data()
+            
+            # Check validation
+            if not validation.get('valid', False):
+                issues = validation.get('issues', [])
+                return Response(
+                    content=f"Error: Data validation failed. Issues: {', '.join(issues)}",
+                    status_code=400,
+                    media_type="text/plain"
+                )
+            
+            # Run cleaning
+            agent.initial_clean()
+            
+            # Generate explanation (for analysis results)
+            explanation, _ = agent.generate_explanation()
+            
+            # Run evaluation
+            evaluation_results = agent.run_evaluation()
+            
+            if evaluation_results is None:
+                return Response(
+                    content="Error: Failed to generate evaluation results.",
+                    status_code=500,
+                    media_type="text/plain"
+                )
+            
+            # Generate markdown evaluation report
+            markdown_report = agent.get_evaluation_report()
+            
+            # Return markdown report
+            return Response(
+                content=markdown_report,
+                media_type="text/markdown",
+                headers={
+                    "Content-Disposition": f"attachment; filename=evaluation_report_{stored_filename}.md"
+                }
+            )
+        
+        finally:
+            # Clean up temporary file
+            try:
+                import os
+                os.unlink(tmp_path)
+            except:
+                pass
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        return Response(
+            content=f"Error processing file: {str(e)}\n\nTraceback:\n{error_trace}",
+            status_code=500,
+            media_type="text/plain"
+        )

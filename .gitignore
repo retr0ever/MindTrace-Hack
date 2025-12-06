@@ -1,4 +1,5 @@
 .env
+.env.local
 __pycache__/
 *.pyc
 .DS_Store
@@ -11,3 +12,7 @@ history.json
 *.log
 evaluation_report.md
 mindtrace_data.db
+*.db
+.vercel
+.venv
+venv/
