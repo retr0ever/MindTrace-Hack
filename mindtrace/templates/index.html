@@ -144,8 +144,15 @@
       <pre>{{ result.last_action_json }}</pre>
       {% endif %}
 
-      <h3>11Labs Explanation</h3>
-      <p>{{ result.audio_message }}</p>
+      <h3>ElevenLabs Audio Explanation</h3>
+      <p>Listen to the audio explanation of the cleaning process:</p>
+      <audio controls style="width: 100%; margin-top: 0.5rem;">
+        <source src="/audio/summary" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+      <p style="font-size: 0.9rem; colour: #586069; margin-top: 0.5rem;">
+        <a href="/audio/summary" download="summary.mp3">Download audio explanation</a>
+      </p>
     </div>
     {% endif %}
   </body>

@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from elevenlabs import ElevenLabs
 
 # Load environment variables
 load_dotenv()
@@ -9,123 +8,78 @@ load_dotenv()
 class ElevenText:
     def __init__(self, api_key=None):
         """
-        Initialize ElevenLabs text explanation generator with agent support.
-        
+        Initialize ElevenLabs text explanation generator.
+
         Args:
             api_key: ElevenLabs API key (optional, will load from env if not provided)
         """
         # Load API key from environment if not provided
         self.api_key = api_key or os.getenv("ELEVENLABS_API_KEY")
-        self.agent_id = "agent_9801kbrh3275efg9s35739g2bzkt"
-        
-        # Initialize ElevenLabs client if API key is available
-        if self.api_key and self.api_key != "YOUR_API_KEY_HERE":
-            try:
-                self.client = ElevenLabs(api_key=self.api_key)
-                self.use_agent = True
-            except Exception as e:
-                print(f"[ElevenText] Warning: Could not initialize ElevenLabs client: {e}")
-                self.use_agent = False
-                self.client = None
-        else:
-            self.use_agent = False
-            self.client = None
 
-    def _generate_with_agent(self, analysis_data: str):
+        # For now, we use template-based text generation
+        # ElevenLabs is primarily used for TTS (text-to-speech) in the audio module
+        print("[ElevenText] Initialised with template-based text generation")
+
+    def _build_detailed_explanation(self, analysis_data: str):
         """
-        Generate explanation using ElevenLabs conversational AI agent.
-        
+        Build a detailed explanation of the EEG cleaning process.
+
         Args:
-            analysis_data: Analysis data to explain
-            
-        Returns:
-            Dictionary with short_summary, long_explanation, and bullet_points
-        """
-        try:
-            from elevenlabs.conversational_ai.conversation import Conversation
-            
-            # Create conversation with the agent
-            conversation = Conversation(
-                client=self.client,
-                agent_id=self.agent_id,
-                requires_auth=True
-            )
-            
-            # Create prompt for the agent
-            prompt = (
-                f"Please explain the following EEG signal cleaning results in a clear, "
-                f"professional manner suitable for research neuroscientists. "
-                f"Analysis data: {analysis_data if analysis_data else 'Standard EEG cleaning pipeline was applied.'} "
-                f"Provide: 1) A short summary (1-2 sentences), 2) A detailed explanation, "
-                f"and 3) Key bullet points about the cleaning steps."
-            )
-            
-            # Send message to agent
-            response = conversation.send_message(prompt)
-            
-            # Parse response (adjust based on actual response format)
-            # For now, use the response as the long explanation
-            long_explanation = str(response) if response else self._get_fallback_explanation(analysis_data)
-            
-            # Extract short summary and bullet points
-            short_summary = analysis_data if analysis_data else (
-                "We filtered out slow drift, high‑frequency noise, and strong eye‑blink "
-                "signals to make the brain activity easier to see."
-            )
-            
-            bullet_points = [
-                "Band‑pass filter: keeps 1–40 Hz brain‑relevant activity",
-                "Notch filter: reduces 50 Hz electrical line noise",
-                "Goal: make eye blinks and noise less dominant in the signal",
-            ]
-            
-            return {
-                "short_summary": short_summary,
-                "long_explanation": long_explanation,
-                "bullet_points": bullet_points,
-            }
-            
-        except Exception as e:
-            print(f"[ElevenText] Error using agent, falling back to template: {e}")
-            return self._generate_fallback(analysis_data)
+            analysis_data: Analysis data string describing the cleaning results
 
-    def _get_fallback_explanation(self, analysis_data: str):
-        """Fallback explanation if agent response is empty."""
-        return (
-            "Your EEG signal went through a standard cleaning pipeline. First, a band‑pass "
-            "filter (1–40 Hz) removed very slow drift and very fast noise that do not reflect "
-            "typical brain rhythms. Then, a 50 Hz notch filter reduced electrical line noise "
-            "from the recording environment. In a full version of the system, an additional "
-            "step further reduces eye‑blink and muscle‑related activity so that the remaining "
-            "signal better reflects underlying brain activity."
+        Returns:
+            Detailed explanation string
+        """
+        base_explanation = (
+            "Your EEG signal has been processed through a comprehensive cleaning pipeline "
+            "designed to isolate genuine brain activity from various sources of noise and artefacts. "
         )
 
-    def _generate_fallback(self, analysis_data: str):
-        """
-        Generate explanation using local template (fallback method).
-        
-        Args:
-            analysis_data: Analysis data to explain
-            
-        Returns:
-            Dictionary with short_summary, long_explanation, and bullet_points
-        """
-        base_summary = (
-            "We filtered out slow drift, high‑frequency noise, and strong eye‑blink "
-            "signals to make the brain activity easier to see."
+        # Add analysis-specific details if provided
+        if analysis_data and analysis_data != "Cleaning complete. SNR improved by 5dB.":
+            base_explanation += f"{analysis_data} "
+
+        base_explanation += (
+            "The cleaning process began with a band‑pass filter set between 1 and 40 hertz, "
+            "which removes both very slow signal drift and high‑frequency noise that fall outside "
+            "the typical range of brain rhythms. Following this, a notch filter centred at 50 hertz "
+            "was applied to eliminate electrical line noise from the recording environment, which is "
+            "a common contaminant in EEG recordings. Finally, Independent Component Analysis was used "
+            "to identify and remove physiological artefacts such as eye blinks and muscle activity, "
+            "ensuring that the remaining signal better reflects underlying neural activity. The result "
+            "is a cleaner dataset that is more suitable for research analysis and interpretation."
         )
 
-        if analysis_data:
+        return base_explanation
+
+    def generate_summary(self, analysis_data: str = ""):
+        """
+        Generates an easy-to-read summary of the cleaning results using template-based generation.
+
+        Args:
+            analysis_data: Analysis data string describing the cleaning results
+
+        Returns:
+            Dictionary with 'short_summary', 'long_explanation', and 'bullet_points'
+        """
+        # Generate short summary
+        if analysis_data and analysis_data != "Cleaning complete. SNR improved by 5dB.":
             short_summary = analysis_data
         else:
-            short_summary = base_summary
+            short_summary = (
+                "EEG signal cleaning complete. Applied band‑pass filtering, line noise removal, "
+                "and artefact reduction to improve signal quality."
+            )
 
-        long_explanation = self._get_fallback_explanation(analysis_data)
+        # Generate detailed explanation
+        long_explanation = self._build_detailed_explanation(analysis_data)
 
+        # Generate bullet points
         bullet_points = [
-            "Band‑pass filter: keeps 1–40 Hz brain‑relevant activity",
-            "Notch filter: reduces 50 Hz electrical line noise",
-            "Goal: make eye blinks and noise less dominant in the signal",
+            "Band‑pass filter (1–40 Hz): Isolates brain‑relevant frequency bands",
+            "Notch filter (50 Hz): Removes electrical line noise interference",
+            "Independent Component Analysis (ICA): Removes eye blinks and muscle artefacts",
+            "Result: Cleaner signal suitable for neuroscience research and analysis",
         ]
 
         return {
@@ -133,19 +87,3 @@ class ElevenText:
             "long_explanation": long_explanation,
             "bullet_points": bullet_points,
         }
-
-    def generate_summary(self, analysis_data: str):
-        """
-        Generates an easy-to-read summary of the cleaning results.
-        Uses ElevenLabs agent if available, otherwise falls back to local template.
-        
-        Args:
-            analysis_data: Analysis data string describing the cleaning results
-            
-        Returns:
-            Dictionary with 'short_summary', 'long_explanation', and 'bullet_points'
-        """
-        if self.use_agent and self.client:
-            return self._generate_with_agent(analysis_data)
-        else:
-            return self._generate_fallback(analysis_data)

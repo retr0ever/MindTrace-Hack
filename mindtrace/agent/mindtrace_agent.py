@@ -21,8 +21,18 @@ class MindTraceAgent:
         self.validator = DataValidationTool()
         self.tools = ActionTools(config)
         self.router = ActionRouter(self.cleaner, unclean, artefact_detection)
-        self.explainer_text = ElevenText(config['elevenlabs']['api_key'])
-        self.explainer_audio = ElevenAudio(config['elevenlabs']['api_key'], config['elevenlabs']['voice_id'])
+        self.explainer_text = ElevenText(config['elevenlabs'].get('api_key'))
+
+        # Initialize audio generator (optional if API key not available)
+        try:
+            self.explainer_audio = ElevenAudio(
+                config['elevenlabs'].get('api_key'),
+                config['elevenlabs'].get('voice_id'),
+                config['elevenlabs'].get('model_id', 'eleven_turbo_v2_5')
+            )
+        except ValueError as e:
+            print(f"[MindTrace] Warning: ElevenLabs audio disabled - {e}")
+            self.explainer_audio = None
         
         self.raw_data = None
         self.cleaned_data = None
@@ -64,9 +74,18 @@ class MindTraceAgent:
         analysis_data = "Cleaning complete. SNR improved by 5dB."
         text_summary = self.explainer_text.generate_summary(analysis_data)
         print(f"Text Summary: {text_summary['short_summary']}")
-        
-        # 2. Audio
-        audio_path = "summary.mp3"
-        self.explainer_audio.generate_audio(text_summary['long_explanation'], audio_path)
-        
+
+        # 2. Audio (optional - gracefully handle API errors)
+        audio_path = None
+        if self.explainer_audio:
+            try:
+                audio_path = "summary.mp3"
+                self.explainer_audio.generate_audio(text_summary['long_explanation'], audio_path)
+            except Exception as e:
+                print(f"[MindTrace] Warning: Could not generate audio - {str(e)[:100]}")
+                print("[MindTrace] Continuing without audio. Check your ElevenLabs API key permissions.")
+                audio_path = None
+        else:
+            print("[MindTrace] Audio generation skipped (ElevenLabs not configured)")
+
         return text_summary, audio_path

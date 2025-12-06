@@ -24,6 +24,7 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 CLEANED_PATH = BASE_DIR.parent / "cleaned_data.npy"
+AUDIO_PATH = BASE_DIR.parent / "summary.mp3"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -95,7 +96,6 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
         "validation": validation,
         "last_instruction": None,
         "last_action_json": None,
-        "audio_message": "An audio explanation has been generated (summary.mp3 in the project folder).",
     }
 
     return templates.TemplateResponse(
@@ -148,7 +148,6 @@ async def run_command(request: Request, instruction: str = Form(...)):
         "validation": validation,
         "last_instruction": instruction,
         "last_action_json": action_json,
-        "audio_message": "An audio explanation has been generated (summary.mp3 in the project folder).",
     }
 
     return templates.TemplateResponse(
@@ -173,4 +172,19 @@ async def download_cleaned():
         CLEANED_PATH,
         media_type="application/octet-stream",
         filename="cleaned_data.npy",
+    )
+
+
+@app.get("/audio/summary")
+async def get_audio_summary():
+    """
+    Serve the audio summary file (MP3).
+    """
+    if not AUDIO_PATH.exists():
+        return HTMLResponse("No audio summary available yet.", status_code=404)
+
+    return FileResponse(
+        AUDIO_PATH,
+        media_type="audio/mpeg",
+        filename="summary.mp3",
     )

@@ -7,9 +7,9 @@
         "ica_components": 20
     },
     "elevenlabs": {
-        "api_key": "YOUR_API_KEY_HERE",
+        "api_key": "",
         "voice_id": "21m00Tcm4TlvDq8ikWAM",
-        "model_id": "eleven_monolingual_v1"
+        "model_id": "eleven_turbo_v2_5"
     },
     "spoon": {
         "api_endpoint": "https://api.spoonos.com/v1",
