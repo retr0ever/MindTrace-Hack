@@ -314,10 +314,13 @@
                 <div class="sidebar-title">Contents</div>
                 <ul class="sidebar-links">
                     <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#use-cases">Use Cases</a></li>
                     <li><a href="#pipeline">Processing Pipeline</a></li>
                     <li><a href="#algorithms">Algorithms Used</a></li>
                     <li><a href="#analysis">Analysis & Metrics</a></li>
                     <li><a href="#ai-integration">AI Integration</a></li>
+                    <li><a href="#limitations">Current Limitations</a></li>
+                    <li><a href="#future">Future Plans</a></li>
                 </ul>
             </aside>
 
@@ -346,6 +349,26 @@
                             <strong>Note:</strong> No manual configuration is required. The pipeline automatically detects sampling rates and channel configurations.
                         </div>
                     </div>
+                </section>
+
+                <section id="use-cases">
+                    <h2>Use Cases</h2>
+                    <p>MindTrace is designed for researchers and clinicians working with EEG data across various domains:</p>
+
+                    <h3>Academic Research</h3>
+                    <p>Quickly clean and prepare EEG datasets for publication-ready analysis. Ideal for cognitive neuroscience studies, sleep research, and brain-computer interface development.</p>
+
+                    <h3>Clinical Diagnostics</h3>
+                    <p>Pre-process patient EEG recordings to identify neural patterns obscured by artefacts. Useful for epilepsy monitoring, sleep disorder assessment, and cognitive impairment screening.</p>
+
+                    <h3>Education & Training</h3>
+                    <p>Teach students about EEG signal processing with an intuitive interface. The visual waveform comparison and detailed reports help explain filtering and artefact removal concepts.</p>
+
+                    <h3>Brain-Computer Interfaces (BCI)</h3>
+                    <p>Prepare clean training data for BCI systems by removing eye blinks, muscle activity, and electrical interference from raw recordings.</p>
+
+                    <h3>Longitudinal Studies</h3>
+                    <p>Process large batches of EEG recordings consistently using the same pipeline parameters, ensuring reproducibility across sessions and participants.</p>
                 </section>
 
                 <section id="pipeline">
@@ -428,6 +451,53 @@
                         <li><strong>Automated Report Generation:</strong> An AI-powered system structures the analysis results into a comprehensive, human-readable scientific report.</li>
                         <li><strong>ElevenLabs TTS Briefing:</strong> (If configured) Converts the key findings from the analysis into a natural-sounding audio summary, providing an accessible overview of the results.</li>
                     </ul>
+                </section>
+
+                <section id="limitations">
+                    <h2>Current Limitations</h2>
+                    <p>While MindTrace provides robust EEG processing capabilities, there are some current limitations to be aware of:</p>
+                    <ul>
+                        <li><strong>ICA Requirements:</strong> ICA requires at least two channels to meaningfully separate sources. Single-channel data falls back to filtering only.</li>
+                        <li><strong>Sampling Rate:</strong> The pipeline assumes a 256 Hz sampling rate by default. Data with significantly different rates may require configuration adjustments.</li>
+                        <li><strong>Artefact Detection:</strong> Automatic artefact component detection uses threshold-based heuristics. Complex or unusual artefacts may require manual review.</li>
+                        <li><strong>File Size:</strong> Very large recordings (>1GB) may cause memory issues on systems with limited RAM.</li>
+                        <li><strong>File Formats:</strong> Currently supports <code>.csv</code> and <code>.npy</code> formats only. EDF/BDF support is planned.</li>
+                        <li><strong>Browser Support:</strong> The web interface is optimised for modern browsers (Chrome, Firefox, Safari).</li>
+                    </ul>
+                </section>
+
+                <section id="future">
+                    <h2>Future Plans</h2>
+                    <p>We are actively developing new features to enhance MindTrace:</p>
+
+                    <h3>Near-term Roadmap</h3>
+                    <ul>
+                        <li><strong>Multi-format Support:</strong> Add support for EDF, BDF, and MNE-Python raw formats commonly used in clinical and research settings.</li>
+                        <li><strong>Batch Processing:</strong> Enable processing of multiple files simultaneously with progress tracking and consolidated reporting.</li>
+                        <li><strong>Custom Pipeline Builder:</strong> Allow users to configure their own processing pipeline by selecting and ordering individual steps.</li>
+                    </ul>
+
+                    <h3>Long-term Vision</h3>
+                    <ul>
+                        <li><strong>Real-time Processing:</strong> Stream EEG data directly from acquisition devices for live artefact removal and monitoring.</li>
+                        <li><strong>ML-based Artefact Detection:</strong> Implement machine learning-based artefact classification for more accurate automatic component rejection.</li>
+                        <li><strong>Collaborative Features:</strong> Add user accounts, shared workspaces, and annotation tools for team-based research.</li>
+                        <li><strong>REST API:</strong> Provide programmatic access to the cleaning pipeline for integration with other research tools.</li>
+                        <li><strong>Extended Analytics:</strong> Add event-related potential (ERP) analysis, connectivity metrics, and source localisation capabilities.</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>Feedback Welcome:</strong> We are always looking to improve. If you have feature requests or encounter issues, please reach out via our GitHub repository.
+                        </div>
+                    </div>
                 </section>
             </div>
         </div>

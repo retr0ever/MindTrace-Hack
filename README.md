@@ -132,9 +132,51 @@ Then open `http://127.0.0.1:8000` in your browser:
 - If ElevenLabs is configured, an audio explanation (`summary.mp3`) is generated.
 - If SpoonOS is configured, you can use the interactive command box to issue natural‑language adjustments (e.g. “undo cleaning between 12–13.5s”).
 
-## Notes and Limitations
+## Use Cases
 
-- ICA requires at least two channels/components to meaningfully separate sources; for single‑channel data, the pipeline falls back to filtering only.
-- SpoonOS and NeoFS integrations require `spoon-core` to be installed and properly configured.
-- ElevenLabs features require valid API keys and internet access.
+MindTrace is designed for researchers and clinicians working with EEG data:
+
+- **Academic Research** - Quickly clean and prepare EEG datasets for publication-ready analysis. Ideal for cognitive neuroscience studies, sleep research, and brain-computer interface development.
+
+- **Clinical Diagnostics** - Pre-process patient EEG recordings to identify neural patterns obscured by artefacts. Useful for epilepsy monitoring, sleep disorder assessment, and cognitive impairment screening.
+
+- **Education & Training** - Teach students about EEG signal processing with an intuitive interface. The visual waveform comparison and detailed reports help explain filtering and artefact removal concepts.
+
+- **Brain-Computer Interfaces (BCI)** - Prepare clean training data for BCI systems by removing eye blinks, muscle activity, and electrical interference.
+
+- **Longitudinal Studies** - Process large batches of EEG recordings consistently using the same pipeline parameters, ensuring reproducibility across sessions.
+
+## Current Limitations
+
+- **ICA Requirements** - ICA requires at least two channels/components to meaningfully separate sources; for single-channel data, the pipeline falls back to filtering only.
+
+- **Sampling Rate Assumption** - The pipeline assumes a 256 Hz sampling rate by default. Data with significantly different rates may require configuration adjustments.
+
+- **Artefact Detection** - Automatic artefact component detection uses threshold-based heuristics. Complex or unusual artefacts may require manual review.
+
+- **File Size** - Very large recordings (>1GB) may cause memory issues on systems with limited RAM.
+
+- **SpoonOS/NeoFS** - These integrations require `spoon-core` to be installed and properly configured.
+
+- **ElevenLabs** - Audio explanations require valid API keys and internet access.
+
+- **Browser Compatibility** - The web interface is optimised for modern browsers (Chrome, Firefox, Safari). Older browsers may have rendering issues.
+
+## Future Plans
+
+- **Multi-format Support** - Add support for EDF, BDF, and MNE-Python raw formats commonly used in clinical and research settings.
+
+- **Batch Processing** - Enable processing of multiple files simultaneously with progress tracking and consolidated reporting.
+
+- **Custom Pipeline Builder** - Allow users to configure their own processing pipeline by selecting and ordering individual steps.
+
+- **Real-time Processing** - Stream EEG data directly from acquisition devices for live artefact removal and monitoring.
+
+- **Advanced Artefact Detection** - Implement machine learning-based artefact classification for more accurate automatic component rejection.
+
+- **Collaborative Features** - Add user accounts, shared workspaces, and annotation tools for team-based research.
+
+- **API Access** - Provide a REST API for programmatic access to the cleaning pipeline, enabling integration with other research tools.
+
+- **Extended Analytics** - Add event-related potential (ERP) analysis, connectivity metrics, and source localisation capabilities.
 
