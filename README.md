@@ -1,31 +1,220 @@
 # MindTrace
 
-MindTrace is an EEG noise‑cleaning and explanation system for research neuroscientists.  
-It cleans raw EEG recordings, generates a cleaned dataset you can download, and produces
-text and audio explanations of what was done. When configured, it also connects to
-SpoonOS for interactive researcher commands and NeoFS for decentralized storage.
+**Transforming EEG preprocessing from a black-box technical task into an interactive, transparent, and verifiable process.**
 
-## Key Features
+MindTrace is an intelligent EEG noise-cleaning and explanation system designed specifically for research neuroscientists. It doesn't just clean your data—it explains what it did, why it did it, and lets you refine the results through natural language commands. With built-in quality assurance and multimodal explanations, MindTrace ensures researchers can trust, understand, and document their preprocessing pipeline.
 
-- **Real EEG cleaning pipeline**
-  - Loads raw data from `.csv` or `.npy`.
-  - Applies band‑pass filtering (1–40 Hz) and 50 Hz notch filtering.
-  - Runs ICA (FastICA) to suppress components with large artefacts (e.g. eye blinks) when multi‑channel data is available.
-  - Saves the cleaned signal as `cleaned_data.npy`.
+## 🎯 Unique Value Proposition
 
-- **Validation**
-  - Checks for NaNs, infinities, unexpected dimensions, and unusual channel names.
-  - Exposes a simple `valid / issues` report in the web UI.
+### Problems MindTrace Solves
 
-- **Explanation**
-  - Generates an easy‑to‑read textual summary of the cleaning steps.
-  - Uses ElevenLabs TTS to create an audio explanation (`summary.mp3`) from that summary.
+**1. The "Black Box" Problem**
+- **Problem:** Most EEG cleaning tools don't explain what they did or why
+- **Solution:** Automatic text and audio explanations of every cleaning step
+- **Value:** Researchers can understand and document preprocessing for papers/reviews
 
-- **SpoonOS + NeoFS (optional)**
-  - Uses SpoonOS LLM to interpret natural‑language researcher commands (e.g. “undo cleaning between 12–13.5s”) and route them to the cleaning pipeline.
-  - Uses SpoonOS NeoFS tools to upload cleaned datasets to NeoFS when configured.
+**2. The "No Undo" Problem**
+- **Problem:** Traditional tools don't allow fine-grained control or undoing specific steps
+- **Solution:** Natural language commands like "undo cleaning between 12-13.5 seconds"
+- **Value:** Iterative refinement without starting over
 
-## Project Structure
+**3. The "Trust Gap" Problem**
+- **Problem:** Researchers need to verify cleaning quality and pipeline performance
+- **Solution:** Comprehensive evaluation metrics (SNR, noise reduction, signal preservation)
+- **Value:** Quantitative proof that cleaning improved the signal without losing important data
+
+**4. The "Accessibility Barrier" Problem**
+- **Problem:** EEG analysis requires deep signal processing knowledge and coding skills
+- **Solution:** Web-based interface with natural language interaction and audio explanations
+- **Value:** Makes EEG analysis accessible to researchers without signal processing expertise
+
+**5. The "Reproducibility Crisis" Problem**
+- **Problem:** Different researchers use different cleaning parameters, making results hard to reproduce
+- **Solution:** Automated pipeline with detailed reports documenting all parameters and decisions
+- **Value:** Enables reproducible preprocessing across labs
+
+**6. The "Time Sink" Problem**
+- **Problem:** Manual EEG cleaning is time-consuming and repetitive
+- **Solution:** Automated pipeline with one-click cleaning and batch processing capability
+- **Value:** Saves hours of manual work per dataset
+
+## ✨ Key Features
+
+### 🧠 Intelligent Processing Pipeline
+- **Automated Cleaning:** Band-pass filtering (1–40 Hz), 50 Hz notch filtering, and ICA-based artefact removal
+- **Multi-format Support:** Loads data from `.csv` or `.npy` files
+- **Smart Artefact Detection:** Automatically identifies and removes eye blinks, muscle activity, and other artefacts
+- **Quality Assurance:** Built-in evaluation module assesses pipeline performance and signal quality
+
+### 📊 Comprehensive Analysis & Visualization
+- **Frequency Band Analysis:** Identifies dominant frequency bands (delta, theta, alpha, beta, gamma)
+- **Signal Quality Metrics:** SNR improvement, noise reduction, signal preservation scores
+- **Interactive Waveforms:** Visual comparison of raw vs cleaned signals with zoom controls
+- **Statistical Validation:** Ensures data integrity is maintained throughout processing
+
+### 🗣️ Natural Language Interface (Powered by SpoonOS)
+- **Plain English Commands:** "Find all blink artefacts above 120uV" or "undo cleaning between 12-13.5s"
+- **Interactive Refinement:** Adjust cleaning parameters without reprocessing entire dataset
+- **LLM-Powered Interpretation:** SpoonOS translates researcher intent into precise actions
+- **No Coding Required:** Web-based interface accessible to all researchers
+
+### 📝 Multimodal Explanations (Powered by ElevenLabs)
+- **Text Reports:** Detailed markdown reports documenting all cleaning steps and parameters
+- **Audio Summaries:** Natural-sounding voice explanations of analysis results (TTS via ElevenLabs)
+- **Visual Feedback:** Charts, waveforms, and metrics for immediate understanding
+- **Scientific Documentation:** Downloadable reports for papers and reviews
+
+### 🔍 Built-in Evaluation System
+- **Pipeline Performance:** Processing time, throughput, efficiency scores
+- **Quality Metrics:** SNR improvement, noise reduction, signal preservation
+- **Health Assessment:** Detects over-filtering, under-filtering, and data issues
+- **Overall Score:** Composite rating (0-100) combining all evaluation metrics
+
+### ☁️ Decentralized Storage (Powered by SpoonOS NeoFS)
+- **Secure Storage:** Upload cleaned datasets to NeoFS for decentralized, permanent storage
+- **Data Sovereignty:** Researchers maintain control over their data
+- **Reproducibility:** Immutable storage ensures data integrity for future reference
+
+## 🔄 How It Works: Integration with SpoonOS & ElevenLabs
+
+### SpoonOS Integration
+
+MindTrace leverages SpoonOS for two critical capabilities:
+
+#### 1. **Natural Language Command Processing**
+
+**Flow:**
+```
+User Command: "undo cleaning between 12-13.5 seconds"
+    ↓
+SpoonLLM.invoke() → SpoonOS LLMManager
+    ↓
+LLM Provider (OpenAI/etc) via SpoonOS unified protocol
+    ↓
+Returns: {"action": "undo_cleaning", "start_time": 12, "end_time": 13.5}
+    ↓
+ActionRouter → Processing Modules
+    ↓
+Cleaned data updated with reverted segment
+```
+
+**Components:**
+- `spoon_ai.llm.LLMManager` - Unified LLM access layer
+- `spoon_ai.schema.Message` - Standardized message format
+- `ConfigurationManager` - Provider configuration management
+
+**Benefits:**
+- Switch between LLM providers (OpenAI, Anthropic, etc.) without code changes
+- Consistent API regardless of underlying provider
+- Built-in error handling and retry logic
+
+#### 2. **NeoFS Decentralized Storage**
+
+**Flow:**
+```
+Cleaned dataset ready
+    ↓
+ActionTools.save_dataset()
+    ↓
+Local save: cleaned_data.npy
+    ↓
+If NeoFS configured:
+    ↓
+UploadObjectTool.execute() (SpoonOS tool)
+    ↓
+Upload to NeoFS container
+    ↓
+Immutable, decentralized storage
+```
+
+**Components:**
+- `spoon_ai.tools.neofs_tools.UploadObjectTool` - NeoFS upload capability
+- Automatic hash generation for data integrity
+- Bearer token authentication
+
+**Benefits:**
+- Decentralized storage ensures data availability
+- Immutable records for reproducibility
+- Research data sovereignty
+
+### ElevenLabs Integration
+
+MindTrace uses ElevenLabs for accessible, professional audio explanations:
+
+#### **Text-to-Speech (TTS) Generation**
+
+**Flow:**
+```
+Analysis results generated
+    ↓
+Report generator creates conversational script
+    ↓
+ElevenAudio.generate_audio()
+    ↓
+ElevenLabs.text_to_speech.convert()
+    ↓
+Audio file: summary.mp3
+    ↓
+Served via web app /audio/summary endpoint
+```
+
+**Configuration:**
+- **Voice:** Rachel (professional, clear voice)
+- **Model:** `eleven_turbo_v2_5` (fast, cost-effective)
+- **Settings:** Balanced stability (0.5) and similarity (0.75)
+
+**Benefits:**
+- **Accessibility:** Audio explanations for different learning preferences
+- **Professional Quality:** Natural-sounding voice (not robotic)
+- **Multimodal Output:** Text + audio for comprehensive understanding
+- **Fast Generation:** Turbo model provides quick results
+
+### Complete Processing Flow
+
+```
+1. User uploads EEG data (.csv or .npy)
+   ↓
+2. Data validation (NaN checks, dimension validation)
+   ↓
+3. Initial cleaning pipeline:
+   - Band-pass filter (1-40 Hz)
+   - Notch filter (50 Hz)
+   - ICA artefact removal
+   ↓
+4. Comprehensive analysis:
+   - Frequency band power analysis
+   - Signal quality metrics
+   - Artefact detection
+   ↓
+5. Evaluation module:
+   - Performance metrics
+   - Quality assessment
+   - Health checks
+   ↓
+6. Explanation generation:
+   - Text report (markdown)
+   - Audio script preparation
+   ↓
+7. ElevenLabs TTS:
+   - Convert script → audio (summary.mp3)
+   ↓
+8. Results available:
+   - Download cleaned data
+   - View/download reports
+   - Listen to audio summary
+   ↓
+9. Interactive refinement (if needed):
+   - User: "undo cleaning at 12-13s"
+   - SpoonOS LLM interprets command
+   - ActionRouter executes
+   - New evaluation & explanations generated
+   ↓
+10. Optional NeoFS upload:
+    - SpoonOS UploadObjectTool
+    - Decentralized storage
+```
+
+## 📁 Project Structure
 
 - `mindtrace/app.py` – CLI entrypoint that runs the full MindTrace pipeline on a local file.
 - `mindtrace/web_app.py` – FastAPI web server for uploading data, running cleaning, and issuing commands via a browser.
@@ -46,7 +235,14 @@ SpoonOS for interactive researcher commands and NeoFS for decentralized storage.
 - `mindtrace/config/settings.json` – default configuration (sampling rate, model IDs, etc.).
 - `create_neofs_container.py` – helper script to create a NeoFS container and update `.env`.
 
-## Setup
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.8+
+- pip package manager
+
+### Installation
 
 1. **Clone the repository**
 
@@ -55,9 +251,15 @@ SpoonOS for interactive researcher commands and NeoFS for decentralized storage.
     cd MindTrace-Hack
     ```
 
-2. **(Optional) Install SpoonOS SDK**
+2. **Install MindTrace dependencies**
 
-    To enable SpoonOS LLM and NeoFS integration, install `spoon-core` from source:
+    ```bash
+    pip install -r mindtrace/requirements.txt
+    ```
+
+3. **(Optional) Install SpoonOS SDK**
+
+    To enable natural language commands and NeoFS storage:
 
     ```bash
     git clone https://github.com/XSpoonAi/spoon-core.git
@@ -67,70 +269,103 @@ SpoonOS for interactive researcher commands and NeoFS for decentralized storage.
     cd ..
     ```
 
-    Without this, the core EEG cleaning and ElevenLabs explanations still work, but:
-    - The interactive command box in the web UI will fail with a clear error.
-    - NeoFS upload will be skipped.
+    **Note:** Without SpoonOS, core EEG cleaning and ElevenLabs audio still work, but:
+    - Interactive command box will be unavailable
+    - NeoFS upload will be skipped
 
-3. **Install MindTrace dependencies**
+4. **Configure API Keys**
 
-    From the project root:
+    Create `.env` file from `.env.example`:
 
     ```bash
-    pip install -r mindtrace/requirements.txt
+    cp .env.example .env
     ```
 
-4. **Configure environment and settings**
+    Add your API keys:
+    ```env
+    # Required for audio explanations
+    ELEVENLABS_API_KEY=your_elevenlabs_key_here
+    
+    # Required for natural language commands
+    SPOON_API_KEY=your_spoon_api_key_here
+    
+    # Optional: For NeoFS storage
+    NEOFS_CONTAINER_ID=your_container_id
+    NEOFS_BEARER_TOKEN=your_bearer_token
+    ```
 
-    - Copy `.env.example` to `.env` (and fill in your secrets):
+5. **(Optional) Setup NeoFS Container**
 
-      ```bash
-      cp .env.example .env
-      ```
+    ```bash
+    python create_neofs_container.py
+    ```
 
-    - Update `mindtrace/config/settings.json`:
-      - `spoon.api_key` – your SpoonOS (or compatible) API key (if using SpoonOS).
-      - `neo.container_id` and `neo.bearer_token` – NeoFS configuration (optional).
-      - `elevenlabs.api_key` – ElevenLabs API key for TTS.
+    This creates a NeoFS container and updates your `.env` file automatically.
 
-    - For NeoFS, you can optionally run:
+## 💻 Usage
 
-      ```bash
-      python create_neofs_container.py
-      ```
+### Web UI (Recommended)
 
-      This will create a container and update `NEOFS_CONTAINER_ID` in `.env`.
-
-## Running MindTrace
-
-### CLI mode (single file)
-
-Run the full pipeline on a local file (`.npy` or `.csv`):
-
-```bash
-python -m mindtrace.app path/to/your_data.csv
-```
-
-This will:
-- Load and validate the data.
-- Run the cleaning pipeline (filters + ICA).
-- Generate text + audio explanations.
-- Save `cleaned_data.npy` (and optionally upload to NeoFS if configured).
-
-### Web UI (recommended for demo/judging)
-
-Start the FastAPI app from the project root:
+Start the FastAPI web application:
 
 ```bash
 uvicorn mindtrace.web_app:app --reload
 ```
 
-Then open `http://127.0.0.1:8000` in your browser:
+Open `http://127.0.0.1:8000` in your browser.
 
-- Upload a `.csv` or `.npy` EEG dataset.
-- See a plain‑English description of what was cleaned.
-- Download `cleaned_data.npy`.
-- If ElevenLabs is configured, an audio explanation (`summary.mp3`) is generated.
-- If SpoonOS is configured, you can use the interactive command box to issue natural‑language adjustments (e.g. “undo cleaning between 12–13.5s”).
+**Features:**
+- 📤 **Upload:** Drag-and-drop or click to upload `.csv` or `.npy` EEG files
+- 📊 **Visualize:** Interactive waveform comparison (raw vs cleaned)
+- 📈 **Analyze:** Frequency band charts and quality metrics
+- 🎧 **Listen:** Audio explanation of results (if ElevenLabs configured)
+- 💬 **Refine:** Natural language commands (if SpoonOS configured)
+  - Example: "undo cleaning between 12-13.5 seconds"
+  - Example: "find all blink artefacts above 120uV"
+- 📥 **Download:** Cleaned data, reports, and evaluation metrics
+
+### CLI Mode
+
+Process a single file from command line:
+
+```bash
+python -m mindtrace.app path/to/your_data.csv
+```
+
+**What happens:**
+1. ✅ Data validation
+2. 🧹 Cleaning pipeline (filters + ICA)
+3. 📊 Analysis (frequency bands, SNR, etc.)
+4. 📝 Report generation (text + audio)
+5. 💾 Save `cleaned_data.npy`
+6. ☁️ Upload to NeoFS (if configured)
+
+### Interactive Commands (SpoonOS Required)
+
+After processing, use natural language to refine results:
+
+```bash
+# In web UI command box or via API
+"Find all blink artefacts above 120uV"
+"Undo cleaning between 12-13.5 seconds"
+"Mark artefact from 5.2 to 5.8 seconds"
+```
+
+SpoonOS LLM interprets these commands and routes them to appropriate processing modules.
+
+## 🔗 API Endpoints
+
+- `GET /` - Main web interface
+- `POST /upload` - Upload and process EEG data
+- `POST /command` - Execute natural language command
+- `GET /api/evaluation` - Get evaluation metrics (JSON)
+- `GET /api/evaluation/report` - Get evaluation report (HTML)
+- `GET /api/waveform-data` - Get waveform data for visualization
+- `GET /api/chart-data` - Get frequency analysis data
+- `GET /download/cleaned` - Download cleaned dataset
+- `GET /download/report` - Download analysis report
+- `GET /download/evaluation-report` - Download evaluation report
+- `GET /audio/summary` - Stream audio explanation
 
 ## Use Cases
 
@@ -146,7 +381,15 @@ MindTrace is designed for researchers and clinicians working with EEG data:
 
 - **Longitudinal Studies** - Process large batches of EEG recordings consistently using the same pipeline parameters, ensuring reproducibility across sessions.
 
-## Current Limitations
+## 🎯 Target Users
+
+- **Clinical Researchers:** Need explanations for regulatory/ethical reviews
+- **Graduate Students:** Need accessible tools without deep DSP knowledge
+- **Lab Managers:** Need reproducible, standardized preprocessing
+- **Interdisciplinary Teams:** Need tools bridging neuroscience and data science
+- **Open Science Advocates:** Need transparent, documented preprocessing
+
+## ⚠️ Current Limitations
 
 - **ICA Requirements** - ICA requires at least two channels/components to meaningfully separate sources; for single-channel data, the pipeline falls back to filtering only.
 
