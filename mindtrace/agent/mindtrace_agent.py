@@ -53,6 +53,7 @@ class MindTraceAgent:
         
         # 3. Log action
         self.tools.log_action(action_json)
+        return action_json
 
     async def save_results(self, path="cleaned_data.npy"):
         if self.cleaned_data is not None:

@@ -137,3 +137,4 @@ Then open `http://127.0.0.1:8000` in your browser:
 - ICA requires at least two channels/components to meaningfully separate sources; for single‑channel data, the pipeline falls back to filtering only.
 - SpoonOS and NeoFS integrations require `spoon-core` to be installed and properly configured.
 - ElevenLabs features require valid API keys and internet access.
+

@@ -3,12 +3,11 @@ import json
 
 try:
     from spoon_ai.tools.base import BaseTool
-    SPOON_BASE_AVAILABLE = True
 except ImportError:
-    SPOON_BASE_AVAILABLE = False
-    # Define a dummy BaseTool if not available
     class BaseTool:
+        """Minimal base class used when spoon-core is not installed."""
         pass
+
 
 class DataValidationTool(BaseTool):
     name: str = "data_validation_tool"
@@ -62,7 +61,10 @@ class DataValidationTool(BaseTool):
     async def execute(self, data_summary: str) -> str:
         """
         SpoonOS Tool execution method.
-        In a real scenario, this might load data from a path.
-        For now, it returns a placeholder message since we pass data directly in Python.
+        This project uses the direct .validate() method on in-memory arrays.
+        Loading from paths via the tool interface is not implemented here.
         """
-        return json.dumps({"status": "Use the direct .validate() method for in-memory numpy arrays."})
+        raise NotImplementedError(
+            "DataValidationTool.execute is not wired to file loading; "
+            "use validate() directly with in-memory numpy arrays."
+        )

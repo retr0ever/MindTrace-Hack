@@ -6,5 +6,9 @@ python-dotenv
 elevenlabs
 pandas
 jupyter
+fastapi
+uvicorn[standard]
+jinja2
+scikit-learn
 # SpoonOS SDK (Install from source: git clone https://github.com/XSpoonAi/spoon-core.git)
 # spoon-core

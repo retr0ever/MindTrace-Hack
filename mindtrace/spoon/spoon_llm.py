@@ -8,7 +8,7 @@ try:
     SPOON_AVAILABLE = True
 except ImportError:
     SPOON_AVAILABLE = False
-    print("Warning: spoon-core not found. Using mock implementation.")
+    print("Warning: spoon-core not found. SpoonOS LLM features will be unavailable.")
 
 class SpoonLLM:
     def __init__(self, api_key=None, provider="openai"):
@@ -25,76 +25,47 @@ class SpoonLLM:
         Invokes SpoonOS LLM for researcher actions.
         """
         print(f"[SpoonOS] Invoking LLM with prompt: {prompt}")
-        
-        if SPOON_AVAILABLE:
-            try:
-                # Construct system prompt to ensure JSON output
-                system_prompt = """
-                You are an EEG analysis assistant. Interpret the user's command and return a JSON object describing the action.
-                
-                REQUIRED FORMAT:
-                {
-                    "action": "action_name",
-                    "param1": "value1",
-                    ...
-                }
 
-                Supported actions:
-                - find_artefacts (params: type [blink/emg], threshold, unit)
-                - mark_artefact (params: type, start_time, end_time)
-                - undo_cleaning (params: start_time, end_time)
-                - alter_cleaning (params: method, reasoning)
+        if not SPOON_AVAILABLE:
+            raise RuntimeError(
+                "SpoonOS LLM is not available. Install spoon-core to use interactive commands."
+            )
+
+        try:
+            # Construct system prompt to ensure JSON output
+            system_prompt = """
+            You are an EEG analysis assistant. Interpret the user's command and return a JSON object describing the action.
+            
+            REQUIRED FORMAT:
+            {
+                "action": "action_name",
+                "param1": "value1",
+                ...
+            }
+
+            Supported actions:
+            - find_artefacts (params: type [blink/emg], threshold, unit)
+            - mark_artefact (params: type, start_time, end_time)
+            - undo_cleaning (params: start_time, end_time)
+            - alter_cleaning (params: method, reasoning)
+            
+            Return ONLY valid JSON. Do not wrap in markdown code blocks.
+            """
+            
+            messages = [
+                Message(role="system", content=system_prompt),
+                Message(role="user", content=prompt)
+            ]
+            
+            response = await self.llm_manager.chat(messages, provider=self.provider)
+            content = response.content
+            
+            # Basic cleanup if LLM returns markdown code blocks
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
                 
-                Return ONLY valid JSON. Do not wrap in markdown code blocks.
-                """
-                
-                messages = [
-                    Message(role="system", content=system_prompt),
-                    Message(role="user", content=prompt)
-                ]
-                
-                response = await self.llm_manager.chat(messages, provider=self.provider)
-                content = response.content
-                
-                # Basic cleanup if LLM returns markdown code blocks
-                if "```json" in content:
-                    content = content.split("```json")[1].split("```")[0].strip()
-                elif "```" in content:
-                    content = content.split("```")[1].split("```")[0].strip()
-                    
-                return content
-            except Exception as e:
-                print(f"Error invoking SpoonOS LLM: {e}. Falling back to mock.")
-        
-        # Mock responses based on keywords in prompt (Fallback)
-        if "blink" in prompt.lower():
-            return json.dumps({
-                "action": "find_artefacts",
-                "type": "blink",
-                "threshold": 120,
-                "unit": "uV"
-            })
-        elif "emg" in prompt.lower():
-             return json.dumps({
-                "action": "mark_artefact",
-                "type": "emg",
-                "start_time": 20,
-                "end_time": 25
-            })
-        elif "undo" in prompt.lower():
-             return json.dumps({
-                "action": "undo_cleaning",
-                "start_time": 12,
-                "end_time": 13.5
-            })
-        elif "switch" in prompt.lower() or "pipeline" in prompt.lower():
-             return json.dumps({
-                "action": "alter_cleaning",
-                "method": "wavelet",
-                "reasoning": "Signal non-stationary, wavelet transform preferred."
-            })
-        else:
-            return json.dumps({
-                "action": "unknown",
-                "message": "Could not interpret command."
-            })
+            return content
+        except Exception as e:
+            raise RuntimeError(f"Error invoking SpoonOS LLM: {e}") from e

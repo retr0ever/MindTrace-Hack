@@ -1,12 +1,13 @@
 import os
 import numpy as np
+import hashlib
 
 try:
     from spoon_ai.tools.neofs_tools import UploadObjectTool
     SPOON_TOOLS_AVAILABLE = True
 except ImportError:
     SPOON_TOOLS_AVAILABLE = False
-    print("Warning: spoon-core tools not found. Using mock implementation.")
+    print("Warning: spoon-core tools not found. NeoFS upload features will be disabled.")
 
 class ActionTools:
     def __init__(self, config=None):
@@ -43,5 +44,9 @@ class ActionTools:
         return None
 
     def hash_dataset(self, data):
-        # Placeholder for crypto tool
-        return "0x123456789abcdef"
+        """
+        Computes a SHA-256 hash of the dataset bytes.
+        """
+        arr = np.asarray(data)
+        h = hashlib.sha256(arr.tobytes()).hexdigest()
+        return f"0x{h}"

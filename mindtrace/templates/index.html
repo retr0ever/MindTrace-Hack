@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MindTrace &mdash; EEG Cleaning Demo</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        margin: 2rem auto;
+        max-width: 800px;
+        line-height: 1.5;
+      }
+      h1,
+      h2,
+      h3 {
+        margin-top: 1.5rem;
+      }
+      form {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .error {
+        color: #b00020;
+        margin-top: 1rem;
+      }
+      .result {
+        margin-top: 2rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f6f8fa;
+      }
+      button {
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: none;
+        background: #0366d6;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #024f9f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>MindTrace &mdash; EEG Cleaning Web App</h1>
+    <p>
+      Upload a raw EEG dataset (<code>.npy</code> or <code>.csv</code>).
+      MindTrace removes common noise (e.g. eye blinks and electrical hum)
+      and prepares an easy-to-read explanation plus an ElevenLabs audio file.
+    </p>
+
+    <h2>What this app does</h2>
+    <ul>
+      <li>Checks your EEG signal for obvious problems (missing or invalid values).</li>
+      <li>Removes slow drifts and high-frequency noise with standard filters.</li>
+      <li>Reduces large spikes such as eye blinks so the brain activity is clearer.</li>
+      <li>Produces a cleaned signal you can download and a short, human-readable summary.</li>
+    </ul>
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <label for="file">EEG file:</label>
+      <input
+        id="file"
+        type="file"
+        name="file"
+        accept=".npy,.csv"
+        required
+      />
+      <br />
+      <button type="submit">Upload &amp; Clean</button>
+    </form>
+
+    {% if result %}
+    <h2>Interactive Commands</h2>
+    <p>
+      After uploading and cleaning a dataset, you can issue
+      natural-language commands (e.g.
+      <code>Find strong eye-blink events above 120&nbsp;µV</code>)
+      and MindTrace will interpret them via SpoonOS and update the
+      cleaned data where appropriate.
+    </p>
+    <form action="/command" method="post">
+      <label for="instruction">Researcher instruction:</label>
+      <input
+        id="instruction"
+        type="text"
+        name="instruction"
+        placeholder="Describe a noisy segment to find or undo..."
+        style="width: 100%; margin-top: 0.5rem"
+        required
+      />
+      <button type="submit">Run command</button>
+    </form>
+    {% endif %}
+
+    {% if error %}
+    <div class="error">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <div class="result">
+      <h2>Cleaning Result</h2>
+      <p><strong>Summary:</strong> {{ result.short_summary }}</p>
+
+      {% if result.bullet_points %}
+      <h3>Details</h3>
+      <ul>
+        {% for item in result.bullet_points %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <h3>Cleaned Dataset</h3>
+      <p>
+        <a href="/download/cleaned">Download cleaned_data.npy</a>
+      </p>
+
+      {% if result.validation %}
+      <h3>Validation</h3>
+      <p>
+        <strong>Valid:</strong>
+        {{ "Yes" if result.validation.valid else "No" }}
+      </p>
+      {% if result.validation.issues %}
+      <ul>
+        {% for issue in result.validation.issues %}
+        <li>{{ issue }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% endif %}
+
+      {% if result.last_instruction %}
+      <h3>Last Command</h3>
+      <p><strong>Instruction:</strong> {{ result.last_instruction }}</p>
+      <pre>{{ result.last_action_json }}</pre>
+      {% endif %}
+
+      <h3>11Labs Explanation</h3>
+      <p>{{ result.audio_message }}</p>
+    </div>
+    {% endif %}
+  </body>
+  </html>

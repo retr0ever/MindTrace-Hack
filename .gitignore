@@ -1,3 +1,6 @@
 .env
 __pycache__/
 *.pyc
+summary.mp3
+mindtrace/uploads/
+cleaned_data.npy
