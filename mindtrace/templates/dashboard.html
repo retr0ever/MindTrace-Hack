@@ -218,10 +218,32 @@
 
     <main class="main-content">
         <div class="container">
+            <!-- Statistics Cards -->
+            {% if stats and stats.total_analyses %}
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div class="card" style="padding: 16px;">
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Total Analyses</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary);">{{ stats.total_analyses }}</div>
+                </div>
+                <div class="card" style="padding: 16px;">
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Avg SNR Improvement</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--success);">+{{ "%.2f"|format(stats.avg_snr_improvement or 0) }} dB</div>
+                </div>
+                <div class="card" style="padding: 16px;">
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Avg Noise Reduction</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--warning);">{{ "%.1f"|format(stats.avg_noise_reduction or 0) }}%</div>
+                </div>
+                <div class="card" style="padding: 16px;">
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Avg Quality Score</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--accent);">{{ "%.1f"|format(stats.avg_overall_score or 0) }}/100</div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div>
-                        <h2>Session Log</h2>
+                        <h2>Analysis History</h2>
                         <p class="subtitle">Archive of processed signals and key findings.</p>
                     </div>
                     <button onclick="window.location.reload()" class="btn-refresh">Refresh List</button>
@@ -235,34 +257,42 @@
                             <th>Dominant Freq</th>
                             <th>SNR Gain</th>
                             <th>Noise Reduction</th>
+                            <th>Score</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for entry in history %}
+                        {% for entry in analyses %}
                         <tr>
-                            <td style="color: var(--text-muted);">{{ entry.timestamp }}</td>
+                            <td style="color: var(--text-muted);">{{ entry.upload_time }}</td>
                             <td style="color: var(--text-main);">{{ entry.filename }}</td>
                             <td>
-                                <span class="band-badge band-{{ entry.dominant_band }}">{{ entry.dominant_band }}</span>
+                                <span class="band-badge band-{{ entry.dominant_band or 'unknown' }}">{{ entry.dominant_band or 'unknown' }}</span>
                             </td>
                             <td style="color: var(--success);">
-                                +{{ "%.2f"|format(entry.snr_improvement) }} dB
+                                +{{ "%.2f"|format(entry.snr_improvement or 0) }} dB
                             </td>
-                            <td>{{ "%.1f"|format(entry.noise_reduction) }}%</td>
+                            <td>{{ "%.1f"|format(entry.noise_reduction_percent or 0) }}%</td>
                             <td>
-                                {% if entry.artefacts == 0 %}
-                                    <span style="color: var(--text-muted);">Clean</span>
+                                {% if entry.overall_score %}
+                                    <span style="color: var(--accent);">{{ "%.0f"|format(entry.overall_score) }}/100</span>
                                 {% else %}
-                                    <span style="color: var(--warning);">{{ entry.artefacts }} Artefacts</span>
+                                    <span style="color: var(--text-muted);">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entry.artefacts_detected == 0 or entry.artefacts_detected is none %}
+                                    <span style="color: var(--success);">Clean</span>
+                                {% else %}
+                                    <span style="color: var(--warning);">{{ entry.artefacts_detected }} Artefacts</span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
-                        
-                        {% if not history %}
+
+                        {% if not analyses %}
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-muted);">
+                            <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-muted);">
                                 No data found. Upload a file to get started.
                             </td>
                         </tr>

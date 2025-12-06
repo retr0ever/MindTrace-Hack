@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 from pathlib import Path
 import markdown
 import numpy as np
@@ -10,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from .app import load_config
 from .agent.mindtrace_agent import MindTraceAgent
 from .data_loader import DataLoader
-from .history import HistoryManager
+from . import database as db
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -30,7 +31,6 @@ def markdown_to_html(markdown_text: str) -> str:
 config = load_config()
 agent = MindTraceAgent(config)
 loader = DataLoader()
-history_manager = HistoryManager()
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -58,14 +58,16 @@ async def index(request: Request):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     """
-    Dashboard showing analysis history.
+    Dashboard showing analysis history from database.
     """
-    history = history_manager.load_history()
+    analyses = db.get_all_analyses(limit=50)
+    stats = db.get_statistics()
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
-            "history": history
+            "analyses": analyses,
+            "stats": stats
         }
     )
 
@@ -126,12 +128,41 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
 
     explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
-    
-    # Save to history
-    history_manager.add_entry(file.filename, explanation.get("analysis_results", {}))
+
+    # Run evaluation
+    agent.run_evaluation()
+
+    # Get analysis results
+    analysis_results = explanation.get("analysis_results", {})
+
+    # Calculate file hash and get data info
+    file_hash = hashlib.md5(contents).hexdigest()
+    data_shape = np.asarray(data).shape
+    num_samples = data_shape[0] if len(data_shape) > 0 else 0
+    num_channels = data_shape[1] if len(data_shape) > 1 else 1
+    fs = config['eeg_processing']['sampling_rate']
+    duration = num_samples / fs
+
+    # Save to database
+    db.save_analysis(
+        filename=file.filename,
+        file_hash=file_hash,
+        file_size_bytes=len(contents),
+        num_channels=num_channels,
+        num_samples=num_samples,
+        duration_seconds=duration,
+        snr_improvement=analysis_results.get('snr_improvement'),
+        noise_reduction_percent=analysis_results.get('noise_reduction'),
+        dominant_band=analysis_results.get('dominant_band'),
+        artefacts_detected=analysis_results.get('artefacts_detected'),
+        band_powers=analysis_results.get('band_powers'),
+        overall_score=agent.evaluation_results.get('overall_score') if agent.evaluation_results else None,
+        signal_preservation=agent.evaluation_results.get('signal_quality_metrics', {}).get('signal_preservation_score') if agent.evaluation_results else None,
+        full_results=analysis_results
+    )
 
     # Generate PDF Report
-    agent.report_generator.generate_pdf_report(explanation.get("analysis_results", {}), str(REPORT_PATH))
+    agent.report_generator.generate_pdf_report(analysis_results, str(REPORT_PATH))
 
     # Save the markdown report as backup/display content
     markdown_report = explanation.get("full_report", "")
@@ -214,9 +245,6 @@ async def run_command(request: Request, instruction: str = Form(...)):
 
     explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
-    
-    # Save to history (mark as refinement)
-    history_manager.add_entry(f"Refinement: {instruction[:20]}...", explanation.get("analysis_results", {}))
 
     # Generate PDF Report
     agent.report_generator.generate_pdf_report(explanation.get("analysis_results", {}), str(REPORT_PATH))
@@ -468,3 +496,43 @@ async def run_evaluation():
         "overall_score": results.get("overall_score", 0),
         "message": "Evaluation completed successfully."
     }
+
+
+@app.get("/api/analyses")
+async def get_analyses(limit: int = 50):
+    """
+    Get all analysis records from the database.
+    """
+    analyses = db.get_all_analyses(limit=limit)
+    return {"analyses": analyses, "count": len(analyses)}
+
+
+@app.get("/api/analyses/{analysis_id}")
+async def get_analysis(analysis_id: int):
+    """
+    Get a specific analysis by ID.
+    """
+    analysis = db.get_analysis_by_id(analysis_id)
+    if analysis is None:
+        return {"error": "Analysis not found"}
+    return analysis
+
+
+@app.get("/api/statistics")
+async def get_statistics():
+    """
+    Get aggregate statistics from all analyses.
+    """
+    stats = db.get_statistics()
+    return stats
+
+
+@app.delete("/api/analyses/{analysis_id}")
+async def delete_analysis(analysis_id: int):
+    """
+    Delete an analysis record.
+    """
+    deleted = db.delete_analysis(analysis_id)
+    if not deleted:
+        return {"error": "Analysis not found"}
+    return {"success": True, "message": f"Analysis {analysis_id} deleted"}
