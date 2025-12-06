@@ -1,5 +1,6 @@
 import asyncio
 from pathlib import Path
+import markdown
 
 from fastapi import FastAPI, File, UploadFile, Request, Form
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
@@ -15,6 +16,14 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app = FastAPI(title="MindTrace Web")
 
+
+def markdown_to_html(markdown_text: str) -> str:
+    """Convert markdown text to formatted HTML."""
+    return markdown.markdown(
+        markdown_text,
+        extensions=['tables', 'fenced_code', 'nl2br']
+    )
+
 # Initialise core MindTrace components once for the app lifetime.
 config = load_config()
 agent = MindTraceAgent(config)
@@ -25,6 +34,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 CLEANED_PATH = BASE_DIR.parent / "cleaned_data.npy"
 AUDIO_PATH = BASE_DIR.parent / "summary.mp3"
+REPORT_PATH = BASE_DIR.parent / "eeg_report.md"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -87,13 +97,21 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
     validation = agent.validate_data()
     agent.initial_clean()
 
-    text_summary, audio_path = agent.generate_explanation()
+    explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
 
+    # Save the report to a file for download
+    markdown_report = explanation.get("full_report", "")
+    with open(REPORT_PATH, 'w') as f:
+        f.write(markdown_report)
+
+    # Convert markdown to HTML for display
+    html_report = markdown_to_html(markdown_report)
+
     result = {
-        "short_summary": text_summary.get("short_summary"),
-        "long_explanation": text_summary.get("long_explanation"),
-        "bullet_points": text_summary.get("bullet_points", []),
+        "short_summary": explanation.get("short_summary"),
+        "full_report_html": html_report,
+        "audio_script": explanation.get("audio_script"),
         "validation": validation,
         "last_instruction": None,
         "last_action_json": None,
@@ -139,15 +157,23 @@ async def run_command(request: Request, instruction: str = Form(...)):
 
     action_json = await agent.process_user_command(instruction)
 
-    text_summary, audio_path = agent.generate_explanation()
+    explanation, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
+
+    # Save the updated report
+    markdown_report = explanation.get("full_report", "")
+    with open(REPORT_PATH, 'w') as f:
+        f.write(markdown_report)
+
+    # Convert markdown to HTML for display
+    html_report = markdown_to_html(markdown_report)
 
     validation = agent.validate_data()
 
     result = {
-        "short_summary": text_summary.get("short_summary"),
-        "long_explanation": text_summary.get("long_explanation"),
-        "bullet_points": text_summary.get("bullet_points", []),
+        "short_summary": explanation.get("short_summary"),
+        "full_report_html": html_report,
+        "audio_script": explanation.get("audio_script"),
         "validation": validation,
         "last_instruction": instruction,
         "last_action_json": action_json,
@@ -191,4 +217,19 @@ async def get_audio_summary():
         AUDIO_PATH,
         media_type="audio/mpeg",
         filename="summary.mp3",
+    )
+
+
+@app.get("/download/report")
+async def download_report():
+    """
+    Download the full scientific report as a Markdown file.
+    """
+    if not REPORT_PATH.exists():
+        return HTMLResponse("No report available yet.", status_code=404)
+
+    return FileResponse(
+        REPORT_PATH,
+        media_type="text/markdown",
+        filename="eeg_analysis_report.md",
     )

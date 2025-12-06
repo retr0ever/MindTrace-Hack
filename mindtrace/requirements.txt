@@ -10,5 +10,6 @@ fastapi
 uvicorn[standard]
 jinja2
 scikit-learn
+markdown
 # SpoonOS SDK (Install from source: git clone https://github.com/XSpoonAi/spoon-core.git)
 # spoon-core

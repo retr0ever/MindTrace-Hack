@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from ..processing.cleaner import EEGCleaner
+from ..processing.analyzer import EEGAnalyzer
 from ..processing import unclean
 from ..processing import artefact_detection
 from ..spoon.spoon_llm import SpoonLLM
@@ -8,12 +9,14 @@ from ..spoon.data_validation_tool import DataValidationTool
 from ..spoon.action_tools import ActionTools
 from ..explanation.eleven_text import ElevenText
 from ..explanation.eleven_audio import ElevenAudio
+from ..explanation.report_generator import EEGReportGenerator
 from .action_router import ActionRouter
 
 class MindTraceAgent:
     def __init__(self, config):
         self.config = config
         self.cleaner = EEGCleaner(config['eeg_processing'])
+        self.analyzer = EEGAnalyzer(config['eeg_processing']['sampling_rate'])
         self.spoon_llm = SpoonLLM(
             api_key=config['spoon']['api_key'],
             provider=config['spoon'].get('llm_provider', 'openai')
@@ -21,6 +24,7 @@ class MindTraceAgent:
         self.validator = DataValidationTool()
         self.tools = ActionTools(config)
         self.router = ActionRouter(self.cleaner, unclean, artefact_detection)
+        self.report_generator = EEGReportGenerator()
         self.explainer_text = ElevenText(config['elevenlabs'].get('api_key'))
 
         # Initialize audio generator (optional if API key not available)
@@ -70,17 +74,53 @@ class MindTraceAgent:
             await self.tools.save_dataset(self.cleaned_data, path)
 
     def generate_explanation(self):
-        # 1. Text
-        analysis_data = "Cleaning complete. SNR improved by 5dB."
-        text_summary = self.explainer_text.generate_summary(analysis_data)
-        print(f"Text Summary: {text_summary['short_summary']}")
+        # 1. Analyze the cleaned data to extract meaningful insights
+        if self.raw_data is not None and self.cleaned_data is not None:
+            print("[MindTrace] Analyzing cleaned EEG data...")
+            analysis_results = self.analyzer.analyze(self.raw_data, self.cleaned_data)
+            print(f"[MindTrace] Analysis complete - {analysis_results.get('dominant_band', 'unknown')} dominant")
+        else:
+            # Fallback if no data available
+            analysis_results = {
+                'snr_improvement': 0,
+                'noise_reduction': 0,
+                'band_powers': {},
+                'dominant_band': 'unknown',
+                'artefacts_detected': 0,
+                'patterns': [],
+                'indicators': []
+            }
 
-        # 2. Audio (optional - gracefully handle API errors)
+        # 2. Generate structured scientific report (for text display/download)
+        print("[MindTrace] Generating scientific report...")
+        report = self.report_generator.generate_report(analysis_results, format="markdown")
+
+        # 3. Generate conversational audio script (different from report)
+        audio_script = self.report_generator.generate_audio_script(analysis_results)
+
+        # 4. Create summary for quick display
+        snr = analysis_results.get('snr_improvement', 0)
+        dominant = analysis_results.get('dominant_band', 'unknown')
+        short_summary = f"Signal quality improved by {snr:.1f} dB. Dominant frequency band: {dominant}."
+
+        # Package the results
+        explanation = {
+            "short_summary": short_summary,
+            "full_report": report["full_report"],
+            "report_sections": report["sections"],
+            "audio_script": audio_script,
+            "analysis_results": analysis_results
+        }
+
+        print(f"Report generated: {len(report['full_report'])} characters")
+
+        # 5. Generate audio from the conversational script (not the report)
         audio_path = None
         if self.explainer_audio:
             try:
                 audio_path = "summary.mp3"
-                self.explainer_audio.generate_audio(text_summary['long_explanation'], audio_path)
+                print(f"[MindTrace] Generating audio ({len(audio_script)} characters)...")
+                self.explainer_audio.generate_audio(audio_script, audio_path)
             except Exception as e:
                 print(f"[MindTrace] Warning: Could not generate audio - {str(e)[:100]}")
                 print("[MindTrace] Continuing without audio. Check your ElevenLabs API key permissions.")
@@ -88,4 +128,4 @@ class MindTraceAgent:
         else:
             print("[MindTrace] Audio generation skipped (ElevenLabs not configured)")
 
-        return text_summary, audio_path
+        return explanation, audio_path

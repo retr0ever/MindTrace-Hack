@@ -22,68 +22,86 @@ class ElevenText:
 
     def _build_detailed_explanation(self, analysis_data: str):
         """
-        Build a detailed explanation of the EEG cleaning process.
+        Build a detailed explanation of the EEG analysis results.
 
         Args:
-            analysis_data: Analysis data string describing the cleaning results
+            analysis_data: Analysis data string describing the insights from cleaned data
 
         Returns:
             Detailed explanation string
         """
-        base_explanation = (
-            "Your EEG signal has been processed through a comprehensive cleaning pipeline "
-            "designed to isolate genuine brain activity from various sources of noise and artefacts. "
+        # Start with the analysis results - what we learned from the data
+        if analysis_data and len(analysis_data) > 50:
+            explanation = (
+                "Analysis of your EEG recording reveals the following insights: "
+                f"{analysis_data} "
+            )
+        else:
+            explanation = "Your EEG signal has been successfully processed. "
+
+        # Add technical details about the cleaning process
+        explanation += (
+            "The data underwent a comprehensive cleaning pipeline to ensure accuracy. "
+            "First, a band‑pass filter (1–40 Hz) isolated brain‑relevant frequency bands, "
+            "removing slow drift and high‑frequency noise. A notch filter at 50 hertz eliminated "
+            "electrical line noise from the recording environment. Finally, Independent Component "
+            "Analysis identified and removed physiological artefacts such as eye blinks and muscle "
+            "activity. This multi‑stage process ensures the results reflect genuine neural activity "
+            "rather than environmental or physiological interference."
         )
 
-        # Add analysis-specific details if provided
-        if analysis_data and analysis_data != "Cleaning complete. SNR improved by 5dB.":
-            base_explanation += f"{analysis_data} "
-
-        base_explanation += (
-            "The cleaning process began with a band‑pass filter set between 1 and 40 hertz, "
-            "which removes both very slow signal drift and high‑frequency noise that fall outside "
-            "the typical range of brain rhythms. Following this, a notch filter centred at 50 hertz "
-            "was applied to eliminate electrical line noise from the recording environment, which is "
-            "a common contaminant in EEG recordings. Finally, Independent Component Analysis was used "
-            "to identify and remove physiological artefacts such as eye blinks and muscle activity, "
-            "ensuring that the remaining signal better reflects underlying neural activity. The result "
-            "is a cleaner dataset that is more suitable for research analysis and interpretation."
-        )
-
-        return base_explanation
+        return explanation
 
     def generate_summary(self, analysis_data: str = ""):
         """
-        Generates an easy-to-read summary of the cleaning results using template-based generation.
+        Generates an easy-to-read summary of the EEG analysis results.
 
         Args:
-            analysis_data: Analysis data string describing the cleaning results
+            analysis_data: Analysis insights from the cleaned EEG data
 
         Returns:
             Dictionary with 'short_summary', 'long_explanation', and 'bullet_points'
         """
-        # Generate short summary
-        if analysis_data and analysis_data != "Cleaning complete. SNR improved by 5dB.":
-            short_summary = analysis_data
+        # Use the analysis data as the short summary if substantial
+        if analysis_data and len(analysis_data) > 50:
+            # Extract first sentence or first 200 chars for short summary
+            short_summary = analysis_data.split('.')[0] + '.' if '.' in analysis_data else analysis_data[:200]
         else:
             short_summary = (
-                "EEG signal cleaning complete. Applied band‑pass filtering, line noise removal, "
-                "and artefact reduction to improve signal quality."
+                "EEG signal analysis complete. Data has been cleaned and analyzed for patterns."
             )
 
-        # Generate detailed explanation
+        # Generate detailed explanation with analysis results
         long_explanation = self._build_detailed_explanation(analysis_data)
 
-        # Generate bullet points
-        bullet_points = [
-            "Band‑pass filter (1–40 Hz): Isolates brain‑relevant frequency bands",
-            "Notch filter (50 Hz): Removes electrical line noise interference",
-            "Independent Component Analysis (ICA): Removes eye blinks and muscle artefacts",
-            "Result: Cleaner signal suitable for neuroscience research and analysis",
-        ]
+        # Generate bullet points from analysis insights
+        bullet_points = self._extract_key_points(analysis_data)
 
         return {
             "short_summary": short_summary,
             "long_explanation": long_explanation,
             "bullet_points": bullet_points,
         }
+
+    def _extract_key_points(self, analysis_data: str):
+        """Extract key bullet points from analysis data."""
+        # Default bullet points
+        points = [
+            "Band‑pass filter (1–40 Hz): Isolated brain‑relevant frequency bands",
+            "Notch filter (50 Hz): Removed electrical line noise interference",
+            "Independent Component Analysis (ICA): Removed eye blinks and muscle artefacts",
+        ]
+
+        # Add analysis-specific points if we have substantial data
+        if analysis_data and len(analysis_data) > 50:
+            # Try to extract key findings from the analysis text
+            if 'alpha' in analysis_data.lower():
+                points.append("Analysis: Alpha rhythm detected in the cleaned signal")
+            if 'beta' in analysis_data.lower():
+                points.append("Analysis: Beta activity observed, indicating active cognition")
+            if 'theta' in analysis_data.lower():
+                points.append("Analysis: Theta waves present, associated with relaxation or memory")
+            if 'snr' in analysis_data.lower() or 'signal quality' in analysis_data.lower():
+                points.append("Signal quality metrics calculated and reported")
+
+        return points

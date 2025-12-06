@@ -44,6 +44,94 @@
       button:hover {
         background: #024f9f;
       }
+      .report {
+        background: #ffffff;
+        padding: 2rem;
+        border: 1px solid #d1d5da;
+        border-radius: 6px;
+        max-height: 600px;
+        overflow-y: auto;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .report h1 {
+        border-bottom: 2px solid #0366d6;
+        padding-bottom: 0.5rem;
+        font-size: 1.8rem;
+        margin-top: 0;
+      }
+      .report h2 {
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3rem;
+        margin-top: 2rem;
+        font-size: 1.5rem;
+      }
+      .report h3 {
+        margin-top: 1.5rem;
+        font-size: 1.2rem;
+        color: #24292e;
+      }
+      .report table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+      }
+      .report table th,
+      .report table td {
+        border: 1px solid #d1d5da;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      .report table th {
+        background: #f6f8fa;
+        font-weight: 600;
+      }
+      .report table tr:nth-child(even) {
+        background: #f6f8fa;
+      }
+      .report strong {
+        font-weight: 600;
+        color: #24292e;
+      }
+      .report code {
+        background: #f6f8fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: "SF Mono", Monaco, Consolas, monospace;
+        font-size: 0.9em;
+      }
+      .download-btn {
+        background: #28a745;
+        margin-left: 0.5rem;
+      }
+      .download-btn:hover {
+        background: #218838;
+      }
+      .report p {
+        margin: 0.75rem 0;
+        line-height: 1.6;
+      }
+      .report ul, .report ol {
+        margin: 0.75rem 0;
+        padding-left: 2rem;
+      }
+      .report li {
+        margin: 0.5rem 0;
+      }
+      .report hr {
+        border: none;
+        border-top: 1px solid #e1e4e8;
+        margin: 2rem 0;
+      }
+      .report blockquote {
+        border-left: 3px solid #0366d6;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        colour: #586069;
+      }
+      .report em {
+        font-style: italic;
+        colour: #24292e;
+      }
     </style>
   </head>
   <body>
@@ -106,17 +194,8 @@
 
     {% if result %}
     <div class="result">
-      <h2>Cleaning Result</h2>
-      <p><strong>Summary:</strong> {{ result.short_summary }}</p>
-
-      {% if result.bullet_points %}
-      <h3>Details</h3>
-      <ul>
-        {% for item in result.bullet_points %}
-        <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+      <h2>Analysis Summary</h2>
+      <p><strong>{{ result.short_summary }}</strong></p>
 
       <h3>Cleaned Dataset</h3>
       <p>
@@ -144,31 +223,36 @@
       <pre>{{ result.last_action_json }}</pre>
       {% endif %}
 
-      <h3>Explanation</h3>
-      <p style="margin-bottom: 1rem;">Choose how you'd like to review the cleaning process:</p>
+      <h3>Analysis Report & Audio Summary</h3>
+      <p style="margin-bottom: 1rem;">Review the detailed scientific report or listen to the audio summary:</p>
 
-      <!-- Text Explanation Option -->
+      <!-- Scientific Report Option -->
       <div style="margin-bottom: 2rem; padding: 1rem; background: #ffffff; border: 1px solid #e1e4e8; border-radius: 6px;">
-        <h4 style="margin-top: 0; display: flex; align-items: centre; gap: 0.5rem;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          Text Explanation
-        </h4>
-        {% if result.long_explanation %}
-        <p style="line-height: 1.6; colour: #24292e;">
-          {{ result.long_explanation }}
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: centre; margin-bottom: 1rem;">
+          <h4 style="margin: 0; display: flex; align-items: centre; gap: 0.5rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Scientific Report
+          </h4>
+          <a href="/download/report" download="eeg_analysis_report.md">
+            <button class="download-btn" type="button">Download Report (.md)</button>
+          </a>
+        </div>
+        {% if result.full_report_html %}
+        <div class="report" id="reportContent">
+          {{ result.full_report_html|safe }}
+        </div>
         {% else %}
-        <p style="colour: #586069;">Text explanation not available.</p>
+        <p style="colour: #586069;">Report not available.</p>
         {% endif %}
       </div>
 
-      <!-- Audio Explanation Option -->
+      <!-- Audio Summary Option -->
       <div style="padding: 1rem; background: #ffffff; border: 1px solid #e1e4e8; border-radius: 6px;">
         <h4 style="margin-top: 0; display: flex; align-items: centre; gap: 0.5rem;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -176,20 +260,20 @@
             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
-          Audio Explanation
+          Audio Summary (Conversational)
         </h4>
         {% if result.has_audio %}
-        <p style="margin-bottom: 0.5rem;">Listen to the audio explanation of the cleaning process:</p>
+        <p style="margin-bottom: 0.5rem;">Listen to a conversational summary of the key findings:</p>
         <audio controls style="width: 100%; margin-top: 0.5rem;">
           <source src="/audio/summary" type="audio/mpeg" />
           Your browser does not support the audio element.
         </audio>
         <p style="font-size: 0.9rem; colour: #586069; margin-top: 0.5rem;">
-          <a href="/audio/summary" download="summary.mp3">Download audio (MP3)</a>
+          <a href="/audio/summary" download="summary.mp3">Download audio summary (MP3)</a>
         </p>
         {% else %}
         <p style="colour: #586069;">
-          Audio explanation not available. Check your ElevenLabs API key configuration.
+          Audio summary not available. Check your ElevenLabs API key configuration.
         </p>
         {% endif %}
       </div>
