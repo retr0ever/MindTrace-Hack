@@ -1,9 +1,12 @@
 .env
 __pycache__/
 *.pyc
+.DS_Store
 summary.mp3
 mindtrace/uploads/
 cleaned_data.npy
 eeg_analysis_report.pdf
 eeg_report.md
 history.json
+*.log
+evaluation_report.md
