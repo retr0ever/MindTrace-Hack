@@ -34,17 +34,32 @@ MindTrace is a prototype EEG-noise-cleaning and explanation system for research 
 
 ## Setup
 
-1.  Install dependencies:
+1.  **Install SpoonOS SDK (Required)**:
+    The `spoon-core` library is not yet on PyPI and must be installed from source.
     ```bash
+    git clone https://github.com/XSpoonAi/spoon-core.git
+    cd spoon-core
     pip install -r requirements.txt
+    pip install .
+    cd ..
     ```
 
-2.  Configure API keys in `config/settings.json`.
+2.  **Install MindTrace Dependencies**:
+    ```bash
+    pip install -r mindtrace/requirements.txt
+    ```
 
-3.  Run the application:
+3.  **Configure Environment**:
+    Update `mindtrace/config/settings.json` with your API keys:
+    *   `spoon.api_key`: Your SpoonOS API Key (if applicable) or OpenAI Key for the LLM provider.
+    *   `neo.container_id` & `neo.bearer_token`: For NeoFS storage integration.
+    *   `elevenlabs.api_key`: For explanation generation.
+
+4.  **Run the Application**:
     ```bash
     python -m mindtrace.app
     ```
+    *Note: If `spoon-core` is not installed, the system will gracefully fallback to mock implementations for demonstration purposes.*
 
 ## Demo
 

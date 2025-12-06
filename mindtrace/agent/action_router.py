@@ -28,8 +28,8 @@ class ActionRouter:
             return self.uncleaner.revert_cleaning(
                 current_data, 
                 original_data, 
-                command.get('start_time'), 
-                command.get('end_time'), 
+                float(command.get('start_time')), 
+                float(command.get('end_time')), 
                 self.cleaner.fs
             )
             

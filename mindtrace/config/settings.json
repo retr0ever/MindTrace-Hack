@@ -13,10 +13,14 @@
     },
     "spoon": {
         "api_endpoint": "https://api.spoonos.com/v1",
-        "api_key": "YOUR_SPOON_API_KEY"
+        "api_key": "YOUR_SPOON_API_KEY",
+        "llm_provider": "openai",
+        "llm_model": "gpt-4"
     },
     "neo": {
-        "rpc_node": "https://testnet.neotube.io",
-        "contract_hash": "0x..."
+        "rpc_node": "https://rest.fs.neo.org/",
+        "contract_hash": "0x...",
+        "container_id": "",
+        "bearer_token": ""
     }
 }

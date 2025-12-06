@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run MindTrace App",
+			"type": "shell",
+			"command": "/Users/selin/.local/share/virtualenvs/selin-Q3qn46mk/bin/python mindtrace/app.py",
+			"isBackground": false,
+			"group": "test"
+		}
+	]
+}

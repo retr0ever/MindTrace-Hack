@@ -14,9 +14,12 @@ class MindTraceAgent:
     def __init__(self, config):
         self.config = config
         self.cleaner = EEGCleaner(config['eeg_processing'])
-        self.spoon_llm = SpoonLLM(config['spoon']['api_key'])
+        self.spoon_llm = SpoonLLM(
+            api_key=config['spoon']['api_key'],
+            provider=config['spoon'].get('llm_provider', 'openai')
+        )
         self.validator = DataValidationTool()
-        self.tools = ActionTools()
+        self.tools = ActionTools(config)
         self.router = ActionRouter(self.cleaner, unclean, artefact_detection)
         self.explainer_text = ElevenText(config['elevenlabs']['api_key'])
         self.explainer_audio = ElevenAudio(config['elevenlabs']['api_key'], config['elevenlabs']['voice_id'])
@@ -38,11 +41,11 @@ class MindTraceAgent:
         self.cleaned_data = self.cleaner.clean(self.raw_data)
         print("Initial cleaning complete.")
 
-    def process_user_command(self, user_instruction):
+    async def process_user_command(self, user_instruction):
         print(f"User Instruction: {user_instruction}")
         
         # 1. SpoonOS interprets command
-        action_json = self.spoon_llm.invoke(user_instruction)
+        action_json = await self.spoon_llm.invoke(user_instruction)
         print(f"SpoonOS Interpretation: {action_json}")
         
         # 2. Route action
@@ -50,6 +53,10 @@ class MindTraceAgent:
         
         # 3. Log action
         self.tools.log_action(action_json)
+
+    async def save_results(self, path="cleaned_data.npy"):
+        if self.cleaned_data is not None:
+            await self.tools.save_dataset(self.cleaned_data, path)
 
     def generate_explanation(self):
         # 1. Text

@@ -6,3 +6,5 @@ python-dotenv
 elevenlabs
 pandas
 jupyter
+# SpoonOS SDK (Install from source: git clone https://github.com/XSpoonAi/spoon-core.git)
+# spoon-core
