@@ -2,6 +2,7 @@ import json
 import numpy as np
 from ..processing.cleaner import EEGCleaner
 from ..processing.analyzer import EEGAnalyzer
+from ..processing.evaluator import PipelineEvaluator
 from ..processing import unclean
 from ..processing import artefact_detection
 from ..spoon.spoon_llm import SpoonLLM
@@ -17,6 +18,7 @@ class MindTraceAgent:
         self.config = config
         self.cleaner = EEGCleaner(config['eeg_processing'])
         self.analyzer = EEGAnalyzer(config['eeg_processing']['sampling_rate'])
+        self.evaluator = PipelineEvaluator(config['eeg_processing']['sampling_rate'])
         self.spoon_llm = SpoonLLM(
             api_key=config['spoon']['api_key'],
             provider=config['spoon'].get('llm_provider', 'openai')
@@ -37,9 +39,10 @@ class MindTraceAgent:
         except ValueError as e:
             print(f"[MindTrace] Warning: ElevenLabs audio disabled - {e}")
             self.explainer_audio = None
-        
+
         self.raw_data = None
         self.cleaned_data = None
+        self.evaluation_results = None
 
     def load_data(self, data):
         self.raw_data = data
@@ -129,3 +132,27 @@ class MindTraceAgent:
             print("[MindTrace] Audio generation skipped (ElevenLabs not configured)")
 
         return explanation, audio_path
+
+    def run_evaluation(self):
+        """Run the pipeline evaluator on the processed data."""
+        if self.raw_data is None or self.cleaned_data is None:
+            print("[MindTrace] Cannot run evaluation: no data loaded")
+            return None
+
+        try:
+            print("[MindTrace] Running pipeline evaluation...")
+            self.evaluation_results = self.evaluator.evaluate_pipeline(
+                self.raw_data,
+                self.cleaned_data
+            )
+            print(f"[MindTrace] Evaluation complete - Overall score: {self.evaluation_results.get('overall_score', 0):.1f}/100")
+            return self.evaluation_results
+        except Exception as e:
+            print(f"[MindTrace] Evaluation failed: {e}")
+            return None
+
+    def get_evaluation_report(self):
+        """Generate a human-readable evaluation report."""
+        if self.evaluation_results is None:
+            self.run_evaluation()
+        return self.evaluator.generate_evaluation_report(self.evaluation_results)

@@ -135,10 +135,9 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
 
     # Save the markdown report as backup/display content
     markdown_report = explanation.get("full_report", "")
-<<<<<<< HEAD
     
-=======
-    with open(REPORT_PATH, 'w') as f:
+    # Save markdown backup
+    with open(BASE_DIR.parent / "eeg_report.md", 'w') as f:
         f.write(markdown_report)
 
     # Save evaluation report if available
@@ -146,8 +145,6 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
         eval_report = agent.get_evaluation_report()
         with open(EVALUATION_REPORT_PATH, 'w', encoding='utf-8') as f:
             f.write(eval_report)
-
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
     # Convert markdown to HTML for display
     html_report = markdown_to_html(markdown_report)
 
@@ -394,12 +391,12 @@ async def get_waveform_data():
     fs = agent.config['eeg_processing']['sampling_rate']
     duration = len(raw_arr) / fs
     
-    # Downsample for visualization (max 5000 points for smooth rendering)
-    max_points = 5000
+    # Downsample for visualization (max 2000 points for smooth rendering)
+    max_points = 2000
     if len(raw_arr) > max_points:
         step = len(raw_arr) // max_points
-        raw_arr = raw_arr[::step]
-        cleaned_arr = cleaned_arr[::step]
+        raw_arr = raw_arr[::step][:max_points]
+        cleaned_arr = cleaned_arr[::step][:max_points]
     
     # Create time axis
     time_axis = np.linspace(0, duration, len(raw_arr)).tolist()

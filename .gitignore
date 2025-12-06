@@ -4,3 +4,6 @@ __pycache__/
 summary.mp3
 mindtrace/uploads/
 cleaned_data.npy
+eeg_analysis_report.pdf
+eeg_report.md
+history.json

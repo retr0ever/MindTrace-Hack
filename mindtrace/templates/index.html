@@ -135,9 +135,9 @@
         }
         
         .nav-links a.active::after {
-            content: ""; /* Removed programming-like content */
+            content: "";
             position: absolute;
-            bottom: -5px; /* Adjust position */
+            bottom: -5px;
             left: 0;
             width: 100%;
             height: 2px;
@@ -568,7 +568,50 @@
                 <p style="font-size: 16px; color: var(--success);">> {{ result.short_summary }}</p>
             </div>
 
-            <!-- AUDIO PLAYER CARD -->
+            <!-- METRICS GRID -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">SNR Gain (dB)</div>
+                    <div class="metric-value primary-text" id="val-snr">--</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Noise Reduction</div>
+                    <div class="metric-value success-text" id="val-noise">--</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Dominant Band</div>
+                    <div class="metric-value accent-text" id="val-band" style="text-transform: capitalize;">--</div>
+                </div>
+            </div>
+
+            <!-- WAVEFORM VISUALIZATION -->
+            <div class="card">
+                <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2>Signal Waveform</h2>
+                        <p class="subtitle">Time-domain signal analysis</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" id="zoomInBtn" style="padding: 6px 12px; font-size: 12px;">Zoom In</button>
+                        <button class="btn btn-secondary" id="zoomOutBtn" style="padding: 6px 12px; font-size: 12px;">Zoom Out</button>
+                        <button class="btn btn-secondary" id="resetZoomBtn" style="padding: 6px 12px; font-size: 12px;">Reset</button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px; display: flex; gap: 16px;">
+                    <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="showRaw" checked> Raw Signal
+                    </label>
+                    <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="showCleaned" checked> Cleaned Signal
+                    </label>
+                </div>
+                <div style="position: relative; height: 350px; width: 100%;">
+                    <canvas id="waveformChart"></canvas>
+                </div>
+                <div id="waveformInfo" style="text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 10px;">Loading waveform data...</div>
+            </div>
+
+            <!-- AUDIO PLAYER CARD (RESTORED FROM LOCAL) -->
             {% if result.has_audio %}
             <div class="audio-summary-card">
                 <div class="audio-player-ui">
@@ -579,7 +622,7 @@
                     </button>
                     
                     <div class="audio-info">
-                        <div class="audio-title">Audio Briefing</div>
+                        <div class="audio-title">AI Audio Briefing</div>
                         <div class="audio-waveform-viz paused" id="visualizer">
                             <!-- JS Generated Bars -->
                         </div>
@@ -599,51 +642,6 @@
                 </div>
             </div>
             {% endif %}
-
-            <!-- METRICS GRID -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">SNR Gain (dB)</div>
-                    <div class="metric-value primary-text" id="val-snr">--</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Noise Reduction</div>
-                    <div class="metric-value success-text" id="val-noise">--</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Dominant Band</div>
-                    <div class="metric-value accent-text" id="val-band" style="text-transform: capitalize;">--</div>
-                </div>
-            </div>
-
-            <!-- Waveform Visualization -->
-            <div class="card">
-                <div style="margin-bottom: 16px;">
-                    <h2>EEG Signal Waveform</h2>
-                    <p class="subtitle">Visual comparison of raw and cleaned signals</p>
-                </div>
-                <div class="chart-container" style="min-height: 400px;">
-                    <div style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="showRaw" checked style="cursor: pointer;">
-                            <span style="color: #D63031; font-weight: 600;">Raw Signal</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="showCleaned" checked style="cursor: pointer;">
-                            <span style="color: #00B894; font-weight: 600;">Cleaned Signal</span>
-                        </label>
-                        <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
-                            <button class="btn btn-secondary" id="zoomInBtn">Zoom In</button>
-                            <button class="btn btn-secondary" id="zoomOutBtn">Zoom Out</button>
-                            <button class="btn btn-secondary" id="resetZoomBtn">Reset</button>
-                        </div>
-                    </div>
-                    <canvas id="waveformChart"></canvas>
-                    <div style="margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center;">
-                        <span id="waveformInfo">Loading waveform data...</span>
-                    </div>
-                </div>
-            </div>
 
             <!-- CHARTS GRID -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
@@ -688,32 +686,23 @@
         // Get result flag from body data attribute
         const hasResult = document.body.getAttribute('data-has-result') === 'true';
         
-        // File upload interaction
-        const uploadZone = document.getElementById('uploadZone');
+        // --- File Upload ---
         const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
         const fileNameDisplay = document.getElementById('fileName');
         const processBtn = document.getElementById('processBtn');
         const uploadForm = document.getElementById('uploadForm');
 
         if(uploadZone) {
             uploadZone.addEventListener('click', () => fileInput.click());
-
-            uploadZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadZone.classList.add('active');
-            });
-
-            uploadZone.addEventListener('dragleave', () => {
-                uploadZone.classList.remove('active');
-            });
-
+            uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('active'); });
+            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('active'));
             uploadZone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadZone.classList.remove('active');
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelect();
             });
-
             fileInput.addEventListener('change', handleFileSelect);
         }
 
@@ -751,7 +740,7 @@
             });
         }
 
-        // Audio Visualizer
+        // --- Audio Visualizer ---
         const visualizer = document.getElementById('visualizer');
         if (visualizer) {
             for(let i=0; i<30; i++) {
@@ -787,11 +776,10 @@
             document.getElementById('transcriptText').classList.toggle('visible');
         }
 
-        // Waveform chart instance
+        // --- Waveform Logic ---
         let waveformChart = null;
         let waveformData = null;
 
-        // Load and render waveform
         async function loadWaveformData() {
             try {
                 const response = await fetch('/api/waveform-data');
@@ -803,163 +791,135 @@
                 }
 
                 waveformData = data;
-
-                // Update info text
                 const infoText = `Duration: ${data.duration.toFixed(2)}s | Points: ${data.points.toLocaleString()} | Sampling Rate: ${data.sampling_rate} Hz`;
-                if (data.downsampled) {
-                    document.getElementById('waveformInfo').textContent = infoText + ' (downsampled for visualization)';
-                } else {
-                    document.getElementById('waveformInfo').textContent = infoText;
-                }
+                document.getElementById('waveformInfo').textContent = data.downsampled ? infoText + ' (downsampled)' : infoText;
 
-                // Prepare datasets
                 const datasets = [];
-                
                 if (document.getElementById('showRaw').checked) {
                     datasets.push({
                         label: 'Raw Signal',
                         data: data.time.map((t, i) => ({ x: t, y: data.raw[i] })),
-                        borderColor: '#D63031',
-                        backgroundColor: 'rgba(214, 48, 49, 0.1)',
-                        borderWidth: 1.5,
+                        borderColor: '#f85149', // Red
+                        backgroundColor: 'rgba(248, 81, 73, 0.1)',
+                        borderWidth: 1,
                         pointRadius: 0,
-                        pointHoverRadius: 3,
-                        tension: 0.1,
                         fill: false
                     });
                 }
-
                 if (document.getElementById('showCleaned').checked) {
                     datasets.push({
                         label: 'Cleaned Signal',
                         data: data.time.map((t, i) => ({ x: t, y: data.cleaned[i] })),
-                        borderColor: '#00B894',
-                        backgroundColor: 'rgba(0, 184, 148, 0.1)',
-                        borderWidth: 1.5,
+                        borderColor: '#3fb950', // Green
+                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                        borderWidth: 1,
                         pointRadius: 0,
-                        pointHoverRadius: 3,
-                        tension: 0.1,
                         fill: false
                     });
                 }
 
-                // Create or update chart
                 const ctx = document.getElementById('waveformChart');
                 if (waveformChart) {
                     waveformChart.data.datasets = datasets;
                     waveformChart.update('none');
                 } else {
+                    Chart.defaults.color = '#8b949e';
+                    Chart.defaults.borderColor = '#30363d';
+
                     waveformChart = new Chart(ctx, {
                         type: 'line',
                         data: { datasets: datasets },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: false,
+                            parsing: false,
+                            normalized: true,
                             interaction: {
                                 intersect: false,
                                 mode: 'index'
                             },
                             plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        title: (items) => `Time: ${items[0].parsed.x.toFixed(3)}s`,
-                                        label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} µV`
-                                    }
+                                legend: { display: false },
+                                decimation: {
+                                    enabled: true,
+                                    algorithm: 'lttb',
+                                    samples: 1000
+                                }
+                            },
+                            elements: {
+                                point: { radius: 0 },
+                                line: {
+                                    borderWidth: 1.5,
+                                    tension: 0
                                 }
                             },
                             scales: {
                                 x: {
                                     type: 'linear',
-                                    title: {
-                                        display: true,
-                                        text: 'Time (seconds)'
-                                    },
-                                    grid: {
-                                        color: '#21262d'
+                                    title: { display: true, text: 'Time (s)', color: '#8b949e' },
+                                    grid: { color: '#21262d' },
+                                    ticks: {
+                                        color: '#8b949e',
+                                        maxTicksLimit: 10
                                     }
                                 },
                                 y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Amplitude (µV)'
-                                    },
-                                    grid: {
-                                        color: '#21262d'
+                                    title: { display: true, text: 'Amplitude (µV)', color: '#8b949e' },
+                                    grid: { color: '#21262d' },
+                                    ticks: {
+                                        color: '#8b949e',
+                                        maxTicksLimit: 8
                                     }
                                 }
                             }
                         }
                     });
                 }
-
             } catch (error) {
                 console.error('Error loading waveform data:', error);
-                document.getElementById('waveformInfo').textContent = 'Error loading waveform data';
             }
         }
 
-        // Setup waveform controls
         function setupWaveformControls() {
-            // Toggle signal visibility
-            const showRawCheckbox = document.getElementById('showRaw');
-            const showCleanedCheckbox = document.getElementById('showCleaned');
-            
-            if (showRawCheckbox) {
-                showRawCheckbox.addEventListener('change', loadWaveformData);
-            }
-            if (showCleanedCheckbox) {
-                showCleanedCheckbox.addEventListener('change', loadWaveformData);
-            }
+            document.getElementById('showRaw').addEventListener('change', loadWaveformData);
+            document.getElementById('showCleaned').addEventListener('change', loadWaveformData);
 
-            // Zoom controls
-            const zoomInBtn = document.getElementById('zoomInBtn');
-            const zoomOutBtn = document.getElementById('zoomOutBtn');
-            const resetZoomBtn = document.getElementById('resetZoomBtn');
+            document.getElementById('zoomInBtn').addEventListener('click', () => {
+                if (waveformChart && waveformData) {
+                    const scale = waveformChart.scales.x;
+                    const range = scale.max - scale.min;
+                    const center = (scale.max + scale.min) / 2;
+                    const newRange = range * 0.7;
+                    scale.options.min = Math.max(0, center - newRange / 2);
+                    scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
+                    waveformChart.update();
+                }
+            });
 
-            if (zoomInBtn) {
-                zoomInBtn.addEventListener('click', () => {
-                    if (waveformChart && waveformData) {
-                        const scale = waveformChart.scales.x;
-                        const currentRange = scale.max - scale.min;
-                        const center = (scale.max + scale.min) / 2;
-                        const newRange = currentRange * 0.7;
-                        scale.options.min = Math.max(0, center - newRange / 2);
-                        scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
-                        waveformChart.update();
-                    }
-                });
-            }
+            document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                if (waveformChart && waveformData) {
+                    const scale = waveformChart.scales.x;
+                    const range = scale.max - scale.min;
+                    const center = (scale.max + scale.min) / 2;
+                    const newRange = range / 0.7;
+                    scale.options.min = Math.max(0, center - newRange / 2);
+                    scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
+                    waveformChart.update();
+                }
+            });
 
-            if (zoomOutBtn) {
-                zoomOutBtn.addEventListener('click', () => {
-                    if (waveformChart && waveformData) {
-                        const scale = waveformChart.scales.x;
-                        const currentRange = scale.max - scale.min;
-                        const center = (scale.max + scale.min) / 2;
-                        const newRange = currentRange / 0.7;
-                        scale.options.min = Math.max(0, center - newRange / 2);
-                        scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
-                        waveformChart.update();
-                    }
-                });
-            }
-
-            if (resetZoomBtn) {
-                resetZoomBtn.addEventListener('click', () => {
-                    if (waveformChart && waveformData) {
-                        const scale = waveformChart.scales.x;
-                        scale.options.min = 0;
-                        scale.options.max = waveformData.duration;
-                        waveformChart.update();
-                    }
-                });
-            }
+            document.getElementById('resetZoomBtn').addEventListener('click', () => {
+                if (waveformChart && waveformData) {
+                    const scale = waveformChart.scales.x;
+                    scale.options.min = 0;
+                    scale.options.max = waveformData.duration;
+                    waveformChart.update();
+                }
+            });
         }
 
-        // Load and render charts
+        // --- Charts ---
         async function loadChartData() {
             try {
                 const response = await fetch('/api/chart-data');
@@ -970,10 +930,6 @@
                     document.getElementById('val-noise').textContent = data.metrics.noise_reduction.toFixed(1) + "%";
                     document.getElementById('val-band').textContent = data.metrics.dominant_band;
 
-                    // Configure global defaults for dark mode charts
-                    Chart.defaults.color = '#8b949e';
-                    Chart.defaults.borderColor = '#30363d';
-
                     new Chart(document.getElementById('chartFreq'), {
                         type: 'bar',
                         data: {
@@ -981,19 +937,15 @@
                             datasets: [{
                                 label: 'Power',
                                 data: data.frequency_bands.data,
-                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
+                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'],
                                 borderWidth: 0,
                                 borderRadius: 4
                             }]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            responsive: true, maintainAspectRatio: false,
                             plugins: { legend: { display: false } },
-                            scales: { 
-                                y: { grid: { color: '#21262d' } },
-                                x: { grid: { display: false } }
-                            }
+                            scales: { y: { grid: { color: '#21262d' } }, x: { grid: { display: false } } }
                         }
                     });
 
@@ -1003,14 +955,13 @@
                             labels: data.frequency_bands.labels,
                             datasets: [{
                                 data: data.frequency_bands.data,
-                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
+                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'],
                                 borderWidth: 0,
                                 borderColor: '#161b22'
                             }]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            responsive: true, maintainAspectRatio: false,
                             cutout: '70%',
                             plugins: { legend: { position: 'right' } }
                         }
@@ -1021,10 +972,8 @@
             }
         }
 
-        // Initialize on page load
+        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // Show correct step based on result
             if (hasResult) {
                 document.getElementById('step-content-1').classList.add('hidden');
                 document.getElementById('step-content-3').classList.remove('hidden');

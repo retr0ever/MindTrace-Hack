@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Report Preview</title>
+    <style>
+      .report {
+        background: #ffffff;
+        padding: 2rem;
+        border: 1px solid #d1d5da;
+        border-radius: 6px;
+        max-width: 900px;
+        margin: 2rem auto;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .report h1 {
+        border-bottom: 2px solid #0366d6;
+        padding-bottom: 0.5rem;
+        font-size: 1.8rem;
+        margin-top: 0;
+      }
+      .report h2 {
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3rem;
+        margin-top: 2rem;
+        font-size: 1.5rem;
+      }
+      .report h3 {
+        margin-top: 1.5rem;
+        font-size: 1.2rem;
+        color: #24292e;
+      }
+      .report table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+      }
+      .report table th,
+      .report table td {
+        border: 1px solid #d1d5da;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      .report table th {
+        background: #f6f8fa;
+        font-weight: 600;
+      }
+      .report table tr:nth-child(even) {
+        background: #f6f8fa;
+      }
+      .report strong {
+        font-weight: 600;
+        color: #24292e;
+      }
+      .report p {
+        margin: 0.75rem 0;
+        line-height: 1.6;
+      }
+      .report ul {
+        margin: 0.75rem 0;
+        padding-left: 2rem;
+      }
+      .report li {
+        margin: 0.5rem 0;
+      }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <h1>EEG Signal Analysis Report</h1>
+        <p><strong>Generated:</strong> 2025-12-06 11:45:00<br>
+        <strong>System:</strong> MindTrace EEG Analysis Platform<br>
+        <strong>Report Type:</strong> Signal Quality and Frequency Analysis</p>
+
+        <h2>Executive Summary</h2>
+        <p>This report presents the results of automated EEG signal processing and analysis. The raw EEG recording underwent a comprehensive cleaning pipeline to remove artefacts and noise, followed by detailed frequency-domain analysis.</p>
+
+        <p><strong>Key Findings:</strong></p>
+        <ul>
+            <li>Signal quality improved by <strong>15.0 dB</strong> (SNR)</li>
+            <li>Noise reduction: <strong>42.0%</strong></li>
+            <li>Dominant brain rhythm: <strong>Alpha band</strong></li>
+            <li>Processing status: <strong>Complete</strong></li>
+        </ul>
+
+        <h2>Signal Quality Assessment</h2>
+        <h3>Noise Reduction</h3>
+        <p>The cleaning pipeline successfully reduced environmental and physiological noise in the recording.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SNR Improvement</td>
+                    <td>15.0 dB</td>
+                    <td>Excellent</td>
+                </tr>
+                <tr>
+                    <td>Noise Reduction</td>
+                    <td>42.0%</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>Residual Artefacts</td>
+                    <td>0 events</td>
+                    <td>Clean</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Frequency Domain Analysis</h2>
+        <h3>Power Distribution Across EEG Bands</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Frequency Band</th>
+                    <th>Range (Hz)</th>
+                    <th>Power (%)</th>
+                    <th>Clinical Significance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Delta (δ)</td>
+                    <td>0.5 - 4</td>
+                    <td>5.2%</td>
+                    <td>Deep sleep, unconscious processes</td>
+                </tr>
+                <tr>
+                    <td>Theta (θ)</td>
+                    <td>4 - 8</td>
+                    <td>8.5%</td>
+                    <td>Drowsiness, meditation, memory</td>
+                </tr>
+                <tr>
+                    <td>Alpha (α)</td>
+                    <td>8 - 13</td>
+                    <td>65.1%</td>
+                    <td>Relaxed wakefulness, closed eyes</td>
+                </tr>
+                <tr>
+                    <td>Beta (β)</td>
+                    <td>13 - 30</td>
+                    <td>18.7%</td>
+                    <td>Active thinking, focus, anxiety</td>
+                </tr>
+                <tr>
+                    <td>Gamma (γ)</td>
+                    <td>30 - 45</td>
+                    <td>2.5%</td>
+                    <td>High-level cognition, perception</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Dominant Rhythm: Alpha Band</h3>
+        <p><strong>Interpretation:</strong> The recording is dominated by alpha rhythm, which is characteristic of:</p>
+        <ul>
+            <li>Relaxed, wakeful state with eyes closed or relaxed</li>
+            <li>Good attentional capacity</li>
+            <li>Calm mental state</li>
+            <li>Normal resting-state brain activity</li>
+        </ul>
+        <p>This pattern is considered typical for a healthy resting-state recording.</p>
+    </div>
+</body>
+</html>
