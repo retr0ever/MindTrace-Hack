@@ -284,6 +284,16 @@
             border-color: var(--text-muted);
             background: rgba(255,255,255,0.05);
         }
+        
+        .btn-secondary {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
 
         /* ============================================
            AUDIO PLAYER (WAVEFORM)
@@ -463,12 +473,7 @@
 
     </style>
 </head>
-<<<<<<< HEAD
-<body>
-
-=======
 <body {% if result %}data-has-result="true"{% else %}data-has-result="false"{% endif %}>
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
     <!-- Header -->
     <header class="header">
         <div class="container header-content">
@@ -563,7 +568,6 @@
                 <p style="font-size: 16px; color: var(--success);">> {{ result.short_summary }}</p>
             </div>
 
-<<<<<<< HEAD
             <!-- AUDIO PLAYER CARD -->
             {% if result.has_audio %}
             <div class="audio-summary-card">
@@ -571,118 +575,6 @@
                     <button class="play-btn-large" id="mainPlayBtn">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8 5v14l11-7z"></path>
-=======
-            <!-- STEP 2: PROCESSING -->
-            <div class="wizard-step-content" id="step-2">
-                <div class="card text-center">
-                    <div class="spinner" style="margin: var(--space-3xl) auto;"></div>
-                    <h2>Processing Your EEG Data</h2>
-                    <p class="text-slate">Applying signal cleaning pipeline and performing frequency analysis...</p>
-
-                    <div class="progress-bar mt-xl" style="max-width: 600px; margin: var(--space-xl) auto;">
-                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                    </div>
-
-                    <div class="mt-xl text-slate">
-                        <div id="processingStatus">Initializing...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 3: ANALYSIS DASHBOARD -->
-            <div class="wizard-step-content" id="step-3">
-                {% if result %}
-                <h2>Analysis Results</h2>
-                <p class="text-slate mb-xl">{{ result.short_summary }}</p>
-
-                <!-- Metrics Cards -->
-                <div class="metrics-grid">
-                    <div class="card metric-card">
-                        <div class="metric-value" id="snr-value">--</div>
-                        <div class="metric-label">SNR Improvement (dB)</div>
-                        <div class="metric-trend">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle;">
-                                <path d="M7 14l5-5 5 5z"></path>
-                            </svg>
-                            Signal Quality Enhanced
-                        </div>
-                    </div>
-
-                    <div class="card metric-card">
-                        <div class="metric-value" id="noise-value">--</div>
-                        <div class="metric-label">Noise Reduction (%)</div>
-                        <div class="metric-trend text-success">Cleaned Signal</div>
-                    </div>
-
-                    <div class="card metric-card">
-                        <div class="metric-value" id="dominant-band">--</div>
-                        <div class="metric-label">Dominant Frequency Band</div>
-                        <div class="metric-trend">Identified Pattern</div>
-                    </div>
-                </div>
-
-                <!-- Waveform Visualization -->
-                <div class="card mt-xl">
-                    <div class="card-header">
-                        <h3>EEG Signal Waveform</h3>
-                        <p class="text-slate">Visual comparison of raw and cleaned signals</p>
-                    </div>
-                    <div class="chart-container" style="min-height: 500px;">
-                        <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-md); align-items: center; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer;">
-                                <input type="checkbox" id="showRaw" checked style="cursor: pointer;">
-                                <span style="color: #D63031; font-weight: 600;">Raw Signal</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer;">
-                                <input type="checkbox" id="showCleaned" checked style="cursor: pointer;">
-                                <span style="color: #00B894; font-weight: 600;">Cleaned Signal</span>
-                            </label>
-                            <div style="margin-left: auto; display: flex; gap: var(--space-sm); align-items: center;">
-                                <button class="btn btn-secondary" id="zoomInBtn" style="padding: 8px 16px; font-size: 12px;">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path>
-                                    </svg>
-                                    Zoom In
-                                </button>
-                                <button class="btn btn-secondary" id="zoomOutBtn" style="padding: 8px 16px; font-size: 12px;">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path>
-                                    </svg>
-                                    Zoom Out
-                                </button>
-                                <button class="btn btn-secondary" id="resetZoomBtn" style="padding: 8px 16px; font-size: 12px;">
-                                    Reset View
-                                </button>
-                            </div>
-                        </div>
-                        <canvas id="waveformChart"></canvas>
-                        <div style="margin-top: var(--space-md); font-size: 12px; color: var(--color-slate); text-align: center;">
-                            <span id="waveformInfo">Loading waveform data...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts -->
-                <div class="chart-grid mt-xl">
-                    <div class="chart-container">
-                        <div class="chart-title">EEG Frequency Band Distribution</div>
-                        <canvas id="frequencyChart"></canvas>
-                    </div>
-
-                    <div class="chart-container">
-                        <div class="chart-title">Power Distribution Across Bands</div>
-                        <canvas id="bandPowerChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="text-center mt-xl">
-                    <button class="btn btn-primary" onclick="showStep(4)">
-                        View Detailed Report
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
                         </svg>
                     </button>
                     
@@ -721,6 +613,35 @@
                 <div class="metric-card">
                     <div class="metric-label">Dominant Band</div>
                     <div class="metric-value accent-text" id="val-band" style="text-transform: capitalize;">--</div>
+                </div>
+            </div>
+
+            <!-- Waveform Visualization -->
+            <div class="card">
+                <div style="margin-bottom: 16px;">
+                    <h2>EEG Signal Waveform</h2>
+                    <p class="subtitle">Visual comparison of raw and cleaned signals</p>
+                </div>
+                <div class="chart-container" style="min-height: 400px;">
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="showRaw" checked style="cursor: pointer;">
+                            <span style="color: #D63031; font-weight: 600;">Raw Signal</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="showCleaned" checked style="cursor: pointer;">
+                            <span style="color: #00B894; font-weight: 600;">Cleaned Signal</span>
+                        </label>
+                        <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                            <button class="btn btn-secondary" id="zoomInBtn">Zoom In</button>
+                            <button class="btn btn-secondary" id="zoomOutBtn">Zoom Out</button>
+                            <button class="btn btn-secondary" id="resetZoomBtn">Reset</button>
+                        </div>
+                    </div>
+                    <canvas id="waveformChart"></canvas>
+                    <div style="margin-top: 16px; font-size: 12px; color: var(--text-muted); text-align: center;">
+                        <span id="waveformInfo">Loading waveform data...</span>
+                    </div>
                 </div>
             </div>
 
@@ -764,8 +685,73 @@
     </main>
 
     <script>
-<<<<<<< HEAD
-        // --- Visualizer ---
+        // Get result flag from body data attribute
+        const hasResult = document.body.getAttribute('data-has-result') === 'true';
+        
+        // File upload interaction
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+        const uploadForm = document.getElementById('uploadForm');
+
+        if(uploadZone) {
+            uploadZone.addEventListener('click', () => fileInput.click());
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('active');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('active');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('active');
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            });
+
+            fileInput.addEventListener('change', handleFileSelect);
+        }
+
+        function handleFileSelect() {
+            if(fileInput.files.length > 0) {
+                const name = fileInput.files[0].name;
+                fileNameDisplay.textContent = `Selected File: ${name}`;
+                processBtn.classList.remove('hidden');
+            }
+        }
+
+        if(uploadForm) {
+            uploadForm.addEventListener('submit', () => {
+                document.getElementById('step-content-1').classList.add('hidden');
+                document.getElementById('step-content-2').classList.remove('hidden');
+                
+                document.getElementById('step-nav-1').classList.remove('active');
+                document.getElementById('step-nav-1').classList.add('completed');
+                document.getElementById('step-nav-2').classList.add('active');
+
+                const bar = document.getElementById('progressBar');
+                const status = document.getElementById('statusText');
+                let width = 0;
+                
+                const interval = setInterval(() => {
+                    if(width >= 90) clearInterval(interval);
+                    else {
+                        width += (95 - width) * 0.05;
+                        bar.style.width = width + '%';
+                        if(width > 10) status.textContent = "Initializing signal processors...";
+                        if(width > 40) status.textContent = "Applying bandpass and notch filters...";
+                        if(width > 70) status.textContent = "Performing ICA for artefact rejection...";
+                    }
+                }, 150);
+            });
+        }
+
+        // Audio Visualizer
         const visualizer = document.getElementById('visualizer');
         if (visualizer) {
             for(let i=0; i<30; i++) {
@@ -773,35 +759,6 @@
                 bar.className = 'bar';
                 bar.style.height = Math.floor(Math.random() * 12 + 4) + 'px';
                 visualizer.appendChild(bar);
-=======
-        // Get result flag from body data attribute
-        const hasResult = document.body.getAttribute('data-has-result') === 'true';
-        
-        // File upload interaction
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-
-        uploadZone.addEventListener('click', () => fileInput.click());
-
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('active');
-        });
-
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('active');
-        });
-
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('active');
-            fileInput.files = e.dataTransfer.files;
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                document.querySelector('.upload-text').textContent = e.target.files[0].name;
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
             }
         }
 
@@ -830,49 +787,9 @@
             document.getElementById('transcriptText').classList.toggle('visible');
         }
 
-        // --- File Upload ---
-        const fileInput = document.getElementById('fileInput');
-        const uploadZone = document.getElementById('uploadZone');
-        const fileNameDisplay = document.getElementById('fileName');
-        const processBtn = document.getElementById('processBtn');
-        const uploadForm = document.getElementById('uploadForm');
-
-        if(fileInput) {
-            uploadZone.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', handleFileSelect);
-            
-            uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('active'); });
-            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('active'));
-            uploadZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadZone.classList.remove('active');
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect();
-            });
-        }
-
-        function handleFileSelect() {
-            if(fileInput.files.length > 0) {
-                const name = fileInput.files[0].name;
-                fileNameDisplay.textContent = `Selected File: ${name}`;
-                processBtn.classList.remove('hidden');
-            }
-        }
-
-<<<<<<< HEAD
-        if(uploadForm) {
-            uploadForm.addEventListener('submit', () => {
-                document.getElementById('step-content-1').classList.add('hidden');
-                document.getElementById('step-content-2').classList.remove('hidden');
-                
-                document.getElementById('step-nav-1').classList.remove('active');
-                document.getElementById('step-nav-1').classList.add('completed');
-                document.getElementById('step-nav-2').classList.add('active');
-=======
         // Waveform chart instance
         let waveformChart = null;
         let waveformData = null;
-        let currentZoom = { min: null, max: null };
 
         // Load and render waveform
         async function loadWaveformData() {
@@ -961,7 +878,7 @@
                                         text: 'Time (seconds)'
                                     },
                                     grid: {
-                                        color: '#E9ECEF'
+                                        color: '#21262d'
                                     }
                                 },
                                 y: {
@@ -970,7 +887,7 @@
                                         text: 'Amplitude (µV)'
                                     },
                                     grid: {
-                                        color: '#E9ECEF'
+                                        color: '#21262d'
                                     }
                                 }
                             }
@@ -1047,100 +964,79 @@
             try {
                 const response = await fetch('/api/chart-data');
                 const data = await response.json();
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
 
-                const bar = document.getElementById('progressBar');
-                const status = document.getElementById('statusText');
-                let width = 0;
-                
-                const interval = setInterval(() => {
-                    if(width >= 90) clearInterval(interval);
-                    else {
-                        width += (95 - width) * 0.05;
-                        bar.style.width = width + '%';
-                        if(width > 10) status.textContent = "Initializing signal processors...";
-                        if(width > 40) status.textContent = "Applying bandpass and notch filters...";
-                        if(width > 70) status.textContent = "Performing ICA for artefact rejection...";
-                    }
-                }, 150);
-            });
+                if(!data.error) {
+                    document.getElementById('val-snr').textContent = "+" + data.metrics.snr.toFixed(2) + " dB";
+                    document.getElementById('val-noise').textContent = data.metrics.noise_reduction.toFixed(1) + "%";
+                    document.getElementById('val-band').textContent = data.metrics.dominant_band;
+
+                    // Configure global defaults for dark mode charts
+                    Chart.defaults.color = '#8b949e';
+                    Chart.defaults.borderColor = '#30363d';
+
+                    new Chart(document.getElementById('chartFreq'), {
+                        type: 'bar',
+                        data: {
+                            labels: data.frequency_bands.labels,
+                            datasets: [{
+                                label: 'Power',
+                                data: data.frequency_bands.data,
+                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
+                                borderWidth: 0,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { 
+                                y: { grid: { color: '#21262d' } },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+
+                    new Chart(document.getElementById('chartPower'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.frequency_bands.labels,
+                            datasets: [{
+                                data: data.frequency_bands.data,
+                                backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
+                                borderWidth: 0,
+                                borderColor: '#161b22'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: { legend: { position: 'right' } }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading chart data", error);
+            }
         }
 
-<<<<<<< HEAD
-        // --- Charts ---
-        {% if result %}
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('step-content-1').classList.add('hidden');
-            document.getElementById('step-content-3').classList.remove('hidden');
-            
-            document.getElementById('step-nav-1').classList.add('completed');
-            document.getElementById('step-nav-1').classList.remove('active');
-            document.getElementById('step-nav-2').classList.add('completed');
-            document.getElementById('step-nav-3').classList.add('active');
-
-            const response = await fetch('/api/chart-data');
-            const data = await response.json();
-
-            if(!data.error) {
-                document.getElementById('val-snr').textContent = "+" + data.metrics.snr.toFixed(2) + " dB";
-                document.getElementById('val-noise').textContent = data.metrics.noise_reduction.toFixed(1) + "%";
-                document.getElementById('val-band').textContent = data.metrics.dominant_band;
-
-                // Configure global defaults for dark mode charts
-                Chart.defaults.color = '#8b949e';
-                Chart.defaults.borderColor = '#30363d';
-
-                new Chart(document.getElementById('chartFreq'), {
-                    type: 'bar',
-                    data: {
-                        labels: data.frequency_bands.labels,
-                        datasets: [{
-                            label: 'Power',
-                            data: data.frequency_bands.data,
-                            backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
-                            borderWidth: 0,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { 
-                            y: { grid: { color: '#21262d' } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-
-                new Chart(document.getElementById('chartPower'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: data.frequency_bands.labels,
-                        datasets: [{
-                            data: data.frequency_bands.data,
-                            backgroundColor: ['#d29922', '#3fb950', '#58a6ff', '#d2a8ff', '#f85149'], /* Adjusted colors */
-                            borderWidth: 0,
-                            borderColor: '#161b22'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%',
-                        plugins: { legend: { position: 'right' } }
-                    }
-                });
-=======
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
-            setupWaveformControls();
+            
+            // Show correct step based on result
             if (hasResult) {
-                // If we have results, show analysis step and load data
-                showStep(3);
+                document.getElementById('step-content-1').classList.add('hidden');
+                document.getElementById('step-content-3').classList.remove('hidden');
+                
+                document.getElementById('step-nav-1').classList.add('completed');
+                document.getElementById('step-nav-1').classList.remove('active');
+                document.getElementById('step-nav-2').classList.add('completed');
+                document.getElementById('step-nav-3').classList.add('active');
+
                 loadChartData();
+                setupWaveformControls();
                 loadWaveformData();
->>>>>>> b8be413fb2972a19faba44221e9c0e7d7e9c21e3
             }
         });
     </script>
