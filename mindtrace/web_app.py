@@ -87,15 +87,17 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
     validation = agent.validate_data()
     agent.initial_clean()
 
-    text_summary, _ = agent.generate_explanation()
+    text_summary, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
 
     result = {
         "short_summary": text_summary.get("short_summary"),
+        "long_explanation": text_summary.get("long_explanation"),
         "bullet_points": text_summary.get("bullet_points", []),
         "validation": validation,
         "last_instruction": None,
         "last_action_json": None,
+        "has_audio": audio_path is not None,
     }
 
     return templates.TemplateResponse(
@@ -137,17 +139,19 @@ async def run_command(request: Request, instruction: str = Form(...)):
 
     action_json = await agent.process_user_command(instruction)
 
-    text_summary, _ = agent.generate_explanation()
+    text_summary, audio_path = agent.generate_explanation()
     await agent.save_results(path=str(CLEANED_PATH))
 
     validation = agent.validate_data()
 
     result = {
         "short_summary": text_summary.get("short_summary"),
+        "long_explanation": text_summary.get("long_explanation"),
         "bullet_points": text_summary.get("bullet_points", []),
         "validation": validation,
         "last_instruction": instruction,
         "last_action_json": action_json,
+        "has_audio": audio_path is not None,
     }
 
     return templates.TemplateResponse(
