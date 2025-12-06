@@ -1,0 +1,16 @@
+mindtrace/uploads/
+*.mp3
+*.npy
+*.pdf
+*.pyc
+__pycache__/
+.git/
+.env
+*.log
+.DS_Store
+test_*.py
+debug_*.py
+*.md
+!README.md
+history.json
+eeg_report.md
