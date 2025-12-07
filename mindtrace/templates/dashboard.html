@@ -195,6 +195,50 @@
         
         .btn-refresh:hover { background: rgba(88, 166, 255, 0.1); }
 
+        .btn-view {
+            background: var(--primary);
+            color: var(--bg-body);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .btn-view:hover { background: var(--primary-hover); }
+
+        .name-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .name-text {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .name-text:hover { background: rgba(88, 166, 255, 0.1); }
+        .name-input {
+            background: var(--bg-body);
+            border: 1px solid var(--primary);
+            color: var(--text-main);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            width: 150px;
+        }
+        .edit-icon {
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        tr:hover .edit-icon { opacity: 1; }
+        .edit-icon:hover { color: var(--primary); }
+
     </style>
 </head>
 <body>
@@ -253,18 +297,29 @@
                     <thead>
                         <tr>
                             <th>Timestamp</th>
+                            <th>Name</th>
                             <th>Source File</th>
                             <th>Dominant Freq</th>
                             <th>SNR Gain</th>
-                            <th>Noise Reduction</th>
                             <th>Score</th>
-                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for entry in analyses %}
-                        <tr>
+                        <tr data-analysis-id="{{ entry.id }}">
                             <td style="color: var(--text-muted);">{{ entry.upload_time }}</td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="name-text" onclick="startRename(this, {{ entry.id }})" title="Click to rename">
+                                        {{ entry.name or 'Unnamed Analysis' }}
+                                    </span>
+                                    <svg class="edit-icon" onclick="startRename(this.previousElementSibling, {{ entry.id }})" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </div>
+                            </td>
                             <td style="color: var(--text-main);">{{ entry.filename }}</td>
                             <td>
                                 <span class="band-badge band-{{ entry.dominant_band or 'unknown' }}">{{ entry.dominant_band or 'unknown' }}</span>
@@ -272,7 +327,6 @@
                             <td style="color: var(--success);">
                                 +{{ "%.2f"|format(entry.snr_improvement or 0) }} dB
                             </td>
-                            <td>{{ "%.1f"|format(entry.noise_reduction_percent or 0) }}%</td>
                             <td>
                                 {% if entry.overall_score %}
                                     <span style="color: var(--accent);">{{ "%.0f"|format(entry.overall_score) }}/100</span>
@@ -281,11 +335,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if entry.artefacts_detected == 0 or entry.artefacts_detected is none %}
-                                    <span style="color: var(--success);">Clean</span>
-                                {% else %}
-                                    <span style="color: var(--warning);">{{ entry.artefacts_detected }} Artefacts</span>
-                                {% endif %}
+                                <button class="btn-view" onclick="loadAnalysis({{ entry.id }})">View</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -302,5 +352,70 @@
             </div>
         </div>
     </main>
+
+    <script>
+        // Load an analysis and redirect to the Analysis page
+        function loadAnalysis(analysisId) {
+            // Save to localStorage and redirect with analysis_id parameter
+            localStorage.setItem('mindtrace_current_analysis', analysisId);
+            window.location.href = '/?analysis_id=' + analysisId;
+        }
+
+        // Start renaming an analysis
+        function startRename(spanElement, analysisId) {
+            const currentName = spanElement.textContent.trim();
+            const isUnnamed = currentName === 'Unnamed Analysis';
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'name-input';
+            input.value = isUnnamed ? '' : currentName;
+            input.placeholder = 'Enter name...';
+
+            // Replace span with input
+            spanElement.style.display = 'none';
+            spanElement.parentNode.insertBefore(input, spanElement);
+            input.focus();
+            input.select();
+
+            // Handle save on blur or Enter
+            const saveName = async () => {
+                const newName = input.value.trim();
+                if (newName && newName !== currentName) {
+                    try {
+                        const response = await fetch(`/api/analyses/${analysisId}/name?name=${encodeURIComponent(newName)}`, {
+                            method: 'PATCH'
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            spanElement.textContent = newName;
+                        } else {
+                            alert('Failed to rename: ' + (data.error || 'Unknown error'));
+                        }
+                    } catch (e) {
+                        console.error('Error renaming:', e);
+                        alert('Error renaming analysis.');
+                    }
+                }
+
+                // Restore span
+                input.remove();
+                spanElement.style.display = '';
+            };
+
+            input.addEventListener('blur', saveName);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.value = currentName;
+                    input.blur();
+                }
+            });
+        }
+    </script>
 </body>
 </html>

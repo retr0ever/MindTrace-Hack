@@ -36,6 +36,10 @@ loader = DataLoader()
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+# Directory for storing analysis data files (raw and cleaned signals)
+ANALYSIS_DATA_DIR = BASE_DIR / "analysis_data"
+ANALYSIS_DATA_DIR.mkdir(exist_ok=True)
+
 CLEANED_PATH = BASE_DIR.parent / "cleaned_data.npy"
 AUDIO_PATH = BASE_DIR.parent / "summary.mp3"
 REPORT_PATH = BASE_DIR.parent / "eeg_analysis_report.pdf"
@@ -43,16 +47,105 @@ EVALUATION_REPORT_PATH = BASE_DIR.parent / "evaluation_report.md"
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, analysis_id: Optional[int] = None, new: Optional[bool] = None):
     """
-    Simple landing page with an upload form.
+    Landing page with upload form, or displays a loaded analysis if analysis_id is provided.
+    Use ?new=true to start a fresh session.
     """
+    result = None
+    error = None
+
+    # If new=true, show the upload form regardless of loaded data
+    if new:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "result": None, "error": None},
+        )
+
+    # Check if we should load a specific analysis
+    if analysis_id:
+        analysis = db.get_analysis_by_id(analysis_id)
+        if analysis:
+            raw_data_path = analysis.get('raw_data_path')
+            cleaned_data_path = analysis.get('cleaned_data_path')
+
+            if raw_data_path and cleaned_data_path and Path(raw_data_path).exists() and Path(cleaned_data_path).exists():
+                # Load the data into the agent
+                agent.raw_data = np.load(raw_data_path)
+                agent.cleaned_data = np.load(cleaned_data_path)
+                agent.current_analysis_id = analysis_id
+                agent.run_evaluation()
+
+                # Build result object from saved analysis
+                full_results = analysis.get('full_results', {})
+                evaluation_summary = None
+                if analysis.get('overall_score'):
+                    evaluation_summary = {
+                        "overall_score": analysis.get('overall_score'),
+                        "snr_db": analysis.get('snr_improvement', 0),
+                        "noise_reduction": analysis.get('noise_reduction_percent', 0),
+                        "signal_preservation": analysis.get('signal_preservation', 0),
+                        "health_status": "healthy"
+                    }
+
+                # Generate report HTML from full_results
+                report_md = full_results.get('report', '') if full_results else ''
+                html_report = markdown_to_html(report_md) if report_md else '<p>Analysis loaded from database.</p>'
+
+                result = {
+                    "analysis_id": analysis_id,
+                    "short_summary": full_results.get('short_summary', f"Loaded analysis: {analysis.get('name') or analysis.get('filename')}"),
+                    "full_report_html": html_report,
+                    "audio_script": full_results.get('audio_script', ''),
+                    "validation": {"valid": True},
+                    "last_instruction": None,
+                    "last_action_json": None,
+                    "has_audio": Path(AUDIO_PATH).exists(),
+                    "evaluation": evaluation_summary,
+                }
+            else:
+                error = "Analysis data files not found. This analysis may have been created before data persistence was enabled."
+        else:
+            error = "Analysis not found."
+
+    # Also check if agent already has data loaded (e.g., from a previous request in this session)
+    elif agent.raw_data is not None and agent.cleaned_data is not None:
+        current_id = getattr(agent, 'current_analysis_id', None)
+        if current_id:
+            analysis = db.get_analysis_by_id(current_id)
+            if analysis:
+                full_results = analysis.get('full_results', {})
+                evaluation_summary = None
+                if analysis.get('overall_score'):
+                    evaluation_summary = {
+                        "overall_score": analysis.get('overall_score'),
+                        "snr_db": analysis.get('snr_improvement', 0),
+                        "noise_reduction": analysis.get('noise_reduction_percent', 0),
+                        "signal_preservation": analysis.get('signal_preservation', 0),
+                        "health_status": "healthy"
+                    }
+
+                report_md = full_results.get('report', '') if full_results else ''
+                html_report = markdown_to_html(report_md) if report_md else '<p>Analysis loaded.</p>'
+
+                result = {
+                    "analysis_id": current_id,
+                    "short_summary": full_results.get('short_summary', f"Current analysis: {analysis.get('name') or analysis.get('filename')}"),
+                    "full_report_html": html_report,
+                    "audio_script": full_results.get('audio_script', ''),
+                    "validation": {"valid": True},
+                    "last_instruction": None,
+                    "last_action_json": None,
+                    "has_audio": Path(AUDIO_PATH).exists(),
+                    "evaluation": evaluation_summary,
+                }
+
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "result": None,
-            "error": None,
+            "result": result,
+            "error": error,
         },
     )
 
@@ -156,8 +249,12 @@ async def upload_dataset(request: Request, file: UploadFile = File(...), usernam
     # Run evaluation
     agent.run_evaluation()
 
-    # Get analysis results
+    # Get analysis results and include display data for later retrieval
     analysis_results = explanation.get("analysis_results", {})
+    # Add display-relevant fields to full_results for database storage
+    analysis_results['report'] = explanation.get("full_report", "")
+    analysis_results['short_summary'] = explanation.get("short_summary", "")
+    analysis_results['audio_script'] = explanation.get("audio_script", "")
 
     # Calculate file hash and get data info
     file_hash = hashlib.md5(contents).hexdigest()
@@ -167,8 +264,8 @@ async def upload_dataset(request: Request, file: UploadFile = File(...), usernam
     fs = config['eeg_processing']['sampling_rate']
     duration = num_samples / fs
 
-    # Save to database
-    db.save_analysis(
+    # Save to database first to get the analysis ID
+    analysis_id = db.save_analysis(
         filename=file.filename,
         file_hash=file_hash,
         file_size_bytes=len(contents),
@@ -184,6 +281,27 @@ async def upload_dataset(request: Request, file: UploadFile = File(...), usernam
         signal_preservation=agent.evaluation_results.get('signal_quality_metrics', {}).get('signal_preservation_score') if agent.evaluation_results else None,
         full_results=analysis_results
     )
+
+    # Save raw and cleaned data files for later retrieval
+    raw_data_path = str(ANALYSIS_DATA_DIR / f"raw_{analysis_id}.npy")
+    cleaned_data_path = str(ANALYSIS_DATA_DIR / f"cleaned_{analysis_id}.npy")
+    np.save(raw_data_path, agent.raw_data)
+    np.save(cleaned_data_path, agent.cleaned_data)
+
+    # Update the database with data paths
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    if db.USE_POSTGRES:
+        cursor.execute("UPDATE analyses SET raw_data_path = %s, cleaned_data_path = %s WHERE id = %s",
+                      (raw_data_path, cleaned_data_path, analysis_id))
+    else:
+        cursor.execute("UPDATE analyses SET raw_data_path = ?, cleaned_data_path = ? WHERE id = ?",
+                      (raw_data_path, cleaned_data_path, analysis_id))
+    conn.commit()
+    conn.close()
+
+    # Store the current analysis ID for frontend
+    agent.current_analysis_id = analysis_id
 
     # Generate PDF Report
     agent.report_generator.generate_pdf_report(analysis_results, str(REPORT_PATH))
@@ -218,6 +336,7 @@ async def upload_dataset(request: Request, file: UploadFile = File(...), usernam
         }
 
     result = {
+        "analysis_id": analysis_id,
         "short_summary": explanation.get("short_summary"),
         "full_report_html": html_report,
         "audio_script": explanation.get("audio_script"),
@@ -427,44 +546,91 @@ async def get_chart_data():
 
 
 @app.get("/api/waveform-data")
-async def get_waveform_data():
+async def get_waveform_data(start: float = 0.0, window: float = 5.0, channel: int = 0):
     """
-    Get waveform data for visualization.
-    Returns downsampled raw and cleaned signal data for efficient rendering.
+    Get waveform data for visualization with proper time windowing.
+
+    Args:
+        start: Start time in seconds (default: 0)
+        window: Time window duration in seconds (default: 5s for clear visualization)
+        channel: Channel index to display (default: 0, use -1 for mean across channels)
+
+    Returns downsampled raw and cleaned signal data for the specified time window.
     """
     if agent.raw_data is None or agent.cleaned_data is None:
         return {"error": "No data available. Please upload a dataset first."}
-    
-    # Convert to numpy arrays and flatten
-    raw_arr = np.asarray(agent.raw_data).flatten()
-    cleaned_arr = np.asarray(agent.cleaned_data).flatten()
-    
+
+    # Convert to numpy arrays
+    raw_arr = np.asarray(agent.raw_data)
+    cleaned_arr = np.asarray(agent.cleaned_data)
+
+    # Handle multi-channel data properly
+    # Data shape is typically [samples, channels] or [samples]
+    if raw_arr.ndim == 1:
+        raw_full = raw_arr
+        cleaned_full = cleaned_arr
+        num_channels = 1
+    else:
+        num_channels = raw_arr.shape[1] if raw_arr.ndim > 1 else 1
+        if channel == -1:
+            # Mean across all channels
+            raw_full = np.mean(raw_arr, axis=1)
+            cleaned_full = np.mean(cleaned_arr, axis=1)
+        else:
+            # Select specific channel (clamp to valid range)
+            ch = min(channel, num_channels - 1)
+            raw_full = raw_arr[:, ch]
+            cleaned_full = cleaned_arr[:, ch]
+
     # Get sampling rate from config
     fs = agent.config['eeg_processing']['sampling_rate']
-    duration = len(raw_arr) / fs
-    
-    # Downsample for visualization (max 2000 points for smooth rendering)
-    max_points = 2000
-    if len(raw_arr) > max_points:
-        step = len(raw_arr) // max_points
-        raw_arr = raw_arr[::step][:max_points]
-        cleaned_arr = cleaned_arr[::step][:max_points]
-    
-    # Create time axis
-    time_axis = np.linspace(0, duration, len(raw_arr)).tolist()
-    
-    # Convert to lists for JSON serialization
-    raw_waveform = raw_arr.tolist()
-    cleaned_waveform = cleaned_arr.tolist()
-    
+    total_duration = len(raw_full) / fs
+
+    # Clamp start time to valid range
+    start = max(0, min(start, total_duration - 0.1))
+
+    # Clamp window to not exceed remaining duration
+    end_time = min(start + window, total_duration)
+    actual_window = end_time - start
+
+    # Calculate sample indices for the time window
+    start_idx = int(start * fs)
+    end_idx = int(end_time * fs)
+
+    # Extract the time window
+    raw_arr = raw_full[start_idx:end_idx]
+    cleaned_arr = cleaned_full[start_idx:end_idx]
+
+    # For visualization, target ~500 points per second (good for seeing EEG waves)
+    # but cap at 2000 total points for performance
+    target_points = min(int(actual_window * 500), 2000)
+
+    if len(raw_arr) > target_points:
+        # Use proper decimation: average over windows to preserve signal shape
+        step = len(raw_arr) // target_points
+        # Reshape and take mean to avoid aliasing
+        trim_len = (len(raw_arr) // step) * step
+        raw_reshaped = raw_arr[:trim_len].reshape(-1, step)
+        cleaned_reshaped = cleaned_arr[:trim_len].reshape(-1, step)
+        raw_arr = raw_reshaped.mean(axis=1)
+        cleaned_arr = cleaned_reshaped.mean(axis=1)
+
+    # Create time axis for the window
+    time_axis = np.linspace(start, end_time, len(raw_arr)).tolist()
+
     return {
         "time": time_axis,
-        "raw": raw_waveform,
-        "cleaned": cleaned_waveform,
+        "raw": raw_arr.tolist(),
+        "cleaned": cleaned_arr.tolist(),
         "sampling_rate": fs,
-        "duration": duration,
+        "total_duration": total_duration,
+        "window_start": start,
+        "window_end": end_time,
+        "window_duration": actual_window,
         "points": len(raw_arr),
-        "downsampled": len(agent.raw_data.flatten()) > max_points
+        "effective_sample_rate": len(raw_arr) / actual_window if actual_window > 0 else 0,
+        "num_channels": num_channels,
+        "current_channel": channel if channel >= 0 else -1
     }
 
 
@@ -560,6 +726,83 @@ async def delete_analysis(analysis_id: int):
     if not deleted:
         return {"error": "Analysis not found"}
     return {"success": True, "message": f"Analysis {analysis_id} deleted"}
+
+
+@app.patch("/api/analyses/{analysis_id}/name")
+async def rename_analysis_endpoint(analysis_id: int, name: str):
+    """
+    Rename an analysis record.
+    """
+    if not name or name.strip() == "":
+        return {"error": "Name cannot be empty"}
+
+    renamed = db.rename_analysis(analysis_id, name.strip())
+    if not renamed:
+        return {"error": "Analysis not found"}
+    return {"success": True, "message": f"Analysis {analysis_id} renamed to '{name}'"}
+
+
+@app.post("/api/analyses/{analysis_id}/load")
+async def load_analysis(analysis_id: int):
+    """
+    Load a saved analysis into the agent state.
+    This restores the raw and cleaned data from saved files.
+    """
+    analysis = db.get_analysis_by_id(analysis_id)
+    if analysis is None:
+        return {"error": "Analysis not found"}
+
+    raw_data_path = analysis.get('raw_data_path')
+    cleaned_data_path = analysis.get('cleaned_data_path')
+
+    if not raw_data_path or not cleaned_data_path:
+        return {"error": "Analysis data files not found. This analysis was created before data persistence was enabled."}
+
+    # Check if files exist
+    if not Path(raw_data_path).exists() or not Path(cleaned_data_path).exists():
+        return {"error": "Analysis data files have been deleted or moved."}
+
+    # Load the data into the agent
+    agent.raw_data = np.load(raw_data_path)
+    agent.cleaned_data = np.load(cleaned_data_path)
+    agent.current_analysis_id = analysis_id
+
+    # Re-run evaluation to restore evaluation_results
+    agent.run_evaluation()
+
+    return {
+        "success": True,
+        "analysis_id": analysis_id,
+        "filename": analysis.get('filename'),
+        "name": analysis.get('name'),
+        "full_results": analysis.get('full_results'),
+        "evaluation": {
+            "overall_score": analysis.get('overall_score'),
+            "signal_preservation": analysis.get('signal_preservation'),
+            "snr_improvement": analysis.get('snr_improvement'),
+            "noise_reduction": analysis.get('noise_reduction_percent')
+        }
+    }
+
+
+@app.get("/api/current-analysis")
+async def get_current_analysis():
+    """
+    Get the current loaded analysis ID and basic info.
+    """
+    if agent.raw_data is None or agent.cleaned_data is None:
+        return {"loaded": False}
+
+    analysis_id = getattr(agent, 'current_analysis_id', None)
+    if analysis_id:
+        analysis = db.get_analysis_by_id(analysis_id)
+        return {
+            "loaded": True,
+            "analysis_id": analysis_id,
+            "filename": analysis.get('filename') if analysis else None,
+            "name": analysis.get('name') if analysis else None
+        }
+    return {"loaded": True, "analysis_id": None}
 
 
 @app.get("/api/process-and-evaluate")

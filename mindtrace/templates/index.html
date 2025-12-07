@@ -474,7 +474,7 @@
 
     </style>
 </head>
-<body {% if result %}data-has-result="true"{% else %}data-has-result="false"{% endif %}>
+<body {% if result %}data-has-result="true" data-analysis-id="{{ result.analysis_id }}"{% else %}data-has-result="false"{% endif %}>
     <!-- Header -->
     <header class="header">
         <div class="container header-content">
@@ -622,19 +622,45 @@
                         <h2>Signal Waveform</h2>
                         <p class="subtitle">Time-domain signal analysis</p>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-secondary" id="zoomInBtn" style="padding: 6px 12px; font-size: 12px;">Zoom In</button>
-                        <button class="btn btn-secondary" id="zoomOutBtn" style="padding: 6px 12px; font-size: 12px;">Zoom Out</button>
-                        <button class="btn btn-secondary" id="resetZoomBtn" style="padding: 6px 12px; font-size: 12px;">Reset</button>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="color: var(--text-muted); font-size: 12px;">Channel:</label>
+                            <select id="channelSelect" style="background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main); padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                <option value="-1">Mean (all)</option>
+                                <option value="0" selected>Ch 1</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="color: var(--text-muted); font-size: 12px;">Window:</label>
+                            <select id="windowSize" style="background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main); padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                <option value="2">2s</option>
+                                <option value="5" selected>5s</option>
+                                <option value="10">10s</option>
+                                <option value="30">30s</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div style="margin-bottom: 16px; display: flex; gap: 16px;">
-                    <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="showRaw" checked> Raw Signal
-                    </label>
-                    <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="showCleaned" checked> Cleaned Signal
-                    </label>
+                <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 16px;">
+                        <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="showRaw" checked> Raw Signal
+                        </label>
+                        <label style="color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="showCleaned" checked> Cleaned Signal
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" id="prevWindowBtn" style="padding: 6px 12px; font-size: 12px;">Prev</button>
+                        <button class="btn btn-secondary" id="nextWindowBtn" style="padding: 6px 12px; font-size: 12px;">Next</button>
+                        <button class="btn btn-secondary" id="resetWindowBtn" style="padding: 6px 12px; font-size: 12px;">Start</button>
+                    </div>
+                </div>
+                <!-- Time slider -->
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                    <span style="color: var(--text-muted); font-size: 11px; min-width: 40px;" id="sliderStart">0.00s</span>
+                    <input type="range" id="timeSlider" min="0" max="100" value="0" style="flex: 1; accent-color: var(--primary);">
+                    <span style="color: var(--text-muted); font-size: 11px; min-width: 50px; text-align: right;" id="sliderEnd">--</span>
                 </div>
                 <div style="position: relative; height: 350px; width: 100%;">
                     <canvas id="waveformChart"></canvas>
@@ -704,7 +730,7 @@
                 <a href="/download/cleaned" class="btn btn-primary" style="margin-right: 16px;">
                     Download Cleaned Data (.npy)
                 </a>
-                <a href="/" class="btn btn-outline">
+                <a href="/?new=true" class="btn btn-outline" onclick="localStorage.removeItem('mindtrace_current_analysis')">
                     New Session
                 </a>
             </div>
@@ -828,11 +854,49 @@
 
         // --- Waveform Logic ---
         let waveformChart = null;
-        let waveformData = null;
+        let waveformMeta = null;
+        let currentWindowStart = 0;
 
-        async function loadWaveformData() {
+        function getWindowSize() {
+            return parseFloat(document.getElementById('windowSize').value);
+        }
+
+        function getSelectedChannel() {
+            return parseInt(document.getElementById('channelSelect').value);
+        }
+
+        function updateChannelOptions(numChannels) {
+            const select = document.getElementById('channelSelect');
+            const currentValue = select.value;
+
+            // Clear existing options except "Mean (all)"
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // Add channel options
+            for (let i = 0; i < numChannels; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Ch ${i + 1}`;
+                select.appendChild(option);
+            }
+
+            // Restore selection if valid
+            if (currentValue >= -1 && currentValue < numChannels) {
+                select.value = currentValue;
+            } else {
+                select.value = '0';
+            }
+        }
+
+        async function loadWaveformData(start = 0, window = null) {
             try {
-                const response = await fetch('/api/waveform-data');
+                if (window === null) window = getWindowSize();
+                currentWindowStart = start;
+                const channel = getSelectedChannel();
+
+                const response = await fetch(`/api/waveform-data?start=${start}&window=${window}&channel=${channel}`);
                 const data = await response.json();
 
                 if (data.error) {
@@ -840,37 +904,54 @@
                     return;
                 }
 
-                waveformData = data;
-                const infoText = `Duration: ${data.duration.toFixed(2)}s | Points: ${data.points.toLocaleString()} | Sampling Rate: ${data.sampling_rate} Hz`;
-                document.getElementById('waveformInfo').textContent = data.downsampled ? infoText + ' (downsampled)' : infoText;
+                waveformMeta = data;
+
+                // Update channel selector with actual number of channels
+                if (data.num_channels) {
+                    updateChannelOptions(data.num_channels);
+                }
+
+                // Update slider
+                const slider = document.getElementById('timeSlider');
+                slider.max = Math.max(0, data.total_duration - window);
+                slider.value = start;
+                document.getElementById('sliderStart').textContent = data.window_start.toFixed(2) + 's';
+                document.getElementById('sliderEnd').textContent = data.total_duration.toFixed(1) + 's total';
+
+                // Update info
+                const channelInfo = data.current_channel === -1 ? 'Mean (all channels)' : `Channel ${data.current_channel + 1}/${data.num_channels}`;
+                const infoText = `${channelInfo} | Viewing: ${data.window_start.toFixed(2)}s - ${data.window_end.toFixed(2)}s | ${data.points} points @ ${data.effective_sample_rate.toFixed(0)} Hz`;
+                document.getElementById('waveformInfo').textContent = infoText;
 
                 const datasets = [];
                 if (document.getElementById('showRaw').checked) {
                     datasets.push({
                         label: 'Raw Signal',
                         data: data.time.map((t, i) => ({ x: t, y: data.raw[i] })),
-                        borderColor: '#f85149', // Red
-                        backgroundColor: 'rgba(248, 81, 73, 0.1)',
-                        borderWidth: 1,
+                        borderColor: '#f85149',
+                        backgroundColor: 'rgba(248, 81, 73, 0.05)',
+                        borderWidth: 1.5,
                         pointRadius: 0,
-                        fill: false
+                        fill: true
                     });
                 }
                 if (document.getElementById('showCleaned').checked) {
                     datasets.push({
                         label: 'Cleaned Signal',
                         data: data.time.map((t, i) => ({ x: t, y: data.cleaned[i] })),
-                        borderColor: '#3fb950', // Green
-                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
-                        borderWidth: 1,
+                        borderColor: '#3fb950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.05)',
+                        borderWidth: 1.5,
                         pointRadius: 0,
-                        fill: false
+                        fill: true
                     });
                 }
 
                 const ctx = document.getElementById('waveformChart');
                 if (waveformChart) {
                     waveformChart.data.datasets = datasets;
+                    waveformChart.options.scales.x.min = data.window_start;
+                    waveformChart.options.scales.x.max = data.window_end;
                     waveformChart.update('none');
                 } else {
                     Chart.defaults.color = '#8b949e';
@@ -885,42 +966,34 @@
                             animation: false,
                             parsing: false,
                             normalized: true,
-                            interaction: {
-                                intersect: false,
-                                mode: 'index'
-                            },
+                            interaction: { intersect: false, mode: 'index' },
                             plugins: {
-                                legend: { display: false },
-                                decimation: {
-                                    enabled: true,
-                                    algorithm: 'lttb',
-                                    samples: 1000
+                                legend: { display: true, position: 'top', labels: { boxWidth: 12, padding: 15 } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} µV`;
+                                        }
+                                    }
                                 }
                             },
                             elements: {
                                 point: { radius: 0 },
-                                line: {
-                                    borderWidth: 1.5,
-                                    tension: 0
-                                }
+                                line: { borderWidth: 1.5, tension: 0.1 }
                             },
                             scales: {
                                 x: {
                                     type: 'linear',
+                                    min: data.window_start,
+                                    max: data.window_end,
                                     title: { display: true, text: 'Time (s)', color: '#8b949e' },
                                     grid: { color: '#21262d' },
-                                    ticks: {
-                                        color: '#8b949e',
-                                        maxTicksLimit: 10
-                                    }
+                                    ticks: { color: '#8b949e', maxTicksLimit: 10 }
                                 },
                                 y: {
                                     title: { display: true, text: 'Amplitude (µV)', color: '#8b949e' },
                                     grid: { color: '#21262d' },
-                                    ticks: {
-                                        color: '#8b949e',
-                                        maxTicksLimit: 8
-                                    }
+                                    ticks: { color: '#8b949e', maxTicksLimit: 8 }
                                 }
                             }
                         }
@@ -928,44 +1001,38 @@
                 }
             } catch (error) {
                 console.error('Error loading waveform data:', error);
+                document.getElementById('waveformInfo').textContent = 'Error loading waveform';
             }
         }
 
         function setupWaveformControls() {
-            document.getElementById('showRaw').addEventListener('change', loadWaveformData);
-            document.getElementById('showCleaned').addEventListener('change', loadWaveformData);
+            document.getElementById('showRaw').addEventListener('change', () => loadWaveformData(currentWindowStart));
+            document.getElementById('showCleaned').addEventListener('change', () => loadWaveformData(currentWindowStart));
+            document.getElementById('windowSize').addEventListener('change', () => loadWaveformData(currentWindowStart));
+            document.getElementById('channelSelect').addEventListener('change', () => loadWaveformData(currentWindowStart));
 
-            document.getElementById('zoomInBtn').addEventListener('click', () => {
-                if (waveformChart && waveformData) {
-                    const scale = waveformChart.scales.x;
-                    const range = scale.max - scale.min;
-                    const center = (scale.max + scale.min) / 2;
-                    const newRange = range * 0.7;
-                    scale.options.min = Math.max(0, center - newRange / 2);
-                    scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
-                    waveformChart.update();
+            document.getElementById('prevWindowBtn').addEventListener('click', () => {
+                if (waveformMeta) {
+                    const window = getWindowSize();
+                    const newStart = Math.max(0, currentWindowStart - window);
+                    loadWaveformData(newStart);
                 }
             });
 
-            document.getElementById('zoomOutBtn').addEventListener('click', () => {
-                if (waveformChart && waveformData) {
-                    const scale = waveformChart.scales.x;
-                    const range = scale.max - scale.min;
-                    const center = (scale.max + scale.min) / 2;
-                    const newRange = range / 0.7;
-                    scale.options.min = Math.max(0, center - newRange / 2);
-                    scale.options.max = Math.min(waveformData.duration, center + newRange / 2);
-                    waveformChart.update();
+            document.getElementById('nextWindowBtn').addEventListener('click', () => {
+                if (waveformMeta) {
+                    const window = getWindowSize();
+                    const newStart = Math.min(waveformMeta.total_duration - window, currentWindowStart + window);
+                    loadWaveformData(Math.max(0, newStart));
                 }
             });
 
-            document.getElementById('resetZoomBtn').addEventListener('click', () => {
-                if (waveformChart && waveformData) {
-                    const scale = waveformChart.scales.x;
-                    scale.options.min = 0;
-                    scale.options.max = waveformData.duration;
-                    waveformChart.update();
-                }
+            document.getElementById('resetWindowBtn').addEventListener('click', () => {
+                loadWaveformData(0);
+            });
+
+            document.getElementById('timeSlider').addEventListener('input', (e) => {
+                loadWaveformData(parseFloat(e.target.value));
             });
         }
 
@@ -1022,20 +1089,51 @@
             }
         }
 
+        // --- Analysis Persistence ---
+        function saveCurrentAnalysis(analysisId) {
+            if (analysisId) {
+                localStorage.setItem('mindtrace_current_analysis', analysisId);
+            }
+        }
+
+        function getSavedAnalysis() {
+            return localStorage.getItem('mindtrace_current_analysis');
+        }
+
+        function showResultsView() {
+            document.getElementById('step-content-1').classList.add('hidden');
+            document.getElementById('step-content-3').classList.remove('hidden');
+
+            document.getElementById('step-nav-1').classList.add('completed');
+            document.getElementById('step-nav-1').classList.remove('active');
+            document.getElementById('step-nav-2').classList.add('completed');
+            document.getElementById('step-nav-3').classList.add('active');
+        }
+
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (hasResult) {
-                document.getElementById('step-content-1').classList.add('hidden');
-                document.getElementById('step-content-3').classList.remove('hidden');
-                
-                document.getElementById('step-nav-1').classList.add('completed');
-                document.getElementById('step-nav-1').classList.remove('active');
-                document.getElementById('step-nav-2').classList.add('completed');
-                document.getElementById('step-nav-3').classList.add('active');
+            const analysisId = document.body.getAttribute('data-analysis-id');
 
+            if (hasResult) {
+                // Server rendered a result, save the analysis ID and show results
+                if (analysisId) {
+                    saveCurrentAnalysis(analysisId);
+                }
+                showResultsView();
                 loadChartData();
                 setupWaveformControls();
                 loadWaveformData();
+            } else {
+                // No server result - check if we have a saved analysis we could redirect to
+                const savedId = getSavedAnalysis();
+                const urlParams = new URLSearchParams(window.location.search);
+
+                // Only redirect if we have a saved ID and we're not starting a new session
+                // and we're not already trying to load one
+                if (savedId && !urlParams.has('analysis_id') && !urlParams.has('new')) {
+                    // Redirect to load the saved analysis
+                    window.location.href = '/?analysis_id=' + savedId;
+                }
             }
         });
     </script>

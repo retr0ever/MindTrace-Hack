@@ -71,6 +71,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS analyses (
                 id SERIAL PRIMARY KEY,
                 filename TEXT NOT NULL,
+                name TEXT,
                 file_hash TEXT,
                 upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 file_size_bytes INTEGER,
@@ -85,6 +86,8 @@ def init_db():
                 overall_score REAL,
                 signal_preservation REAL,
                 full_results TEXT,
+                raw_data_path TEXT,
+                cleaned_data_path TEXT,
                 status TEXT DEFAULT 'completed'
             )
         """)
@@ -111,6 +114,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS analyses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL,
+                name TEXT,
                 file_hash TEXT,
                 upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 file_size_bytes INTEGER,
@@ -125,6 +129,8 @@ def init_db():
                 overall_score REAL,
                 signal_preservation REAL,
                 full_results TEXT,
+                raw_data_path TEXT,
+                cleaned_data_path TEXT,
                 status TEXT DEFAULT 'completed'
             )
         """)
@@ -154,6 +160,7 @@ def init_db():
 
 def save_analysis(
     filename: str,
+    name: Optional[str] = None,
     file_hash: Optional[str] = None,
     file_size_bytes: Optional[int] = None,
     num_channels: Optional[int] = None,
@@ -167,6 +174,8 @@ def save_analysis(
     overall_score: Optional[float] = None,
     signal_preservation: Optional[float] = None,
     full_results: Optional[Dict] = None,
+    raw_data_path: Optional[str] = None,
+    cleaned_data_path: Optional[str] = None,
     status: str = 'completed'
 ) -> int:
     """
@@ -184,32 +193,32 @@ def save_analysis(
     if USE_POSTGRES:
         cursor.execute("""
             INSERT INTO analyses (
-                filename, file_hash, file_size_bytes, num_channels, num_samples,
+                filename, name, file_hash, file_size_bytes, num_channels, num_samples,
                 duration_seconds, snr_improvement, noise_reduction_percent,
                 dominant_band, artefacts_detected, band_powers, overall_score,
-                signal_preservation, full_results, status
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                signal_preservation, full_results, raw_data_path, cleaned_data_path, status
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
-            filename, file_hash, file_size_bytes, num_channels, num_samples,
+            filename, name, file_hash, file_size_bytes, num_channels, num_samples,
             duration_seconds, snr_improvement, noise_reduction_percent,
             dominant_band, artefacts_detected, band_powers_json, overall_score,
-            signal_preservation, full_results_json, status
+            signal_preservation, full_results_json, raw_data_path, cleaned_data_path, status
         ))
         record_id = cursor.fetchone()[0]
     else:
         cursor.execute("""
             INSERT INTO analyses (
-                filename, file_hash, file_size_bytes, num_channels, num_samples,
+                filename, name, file_hash, file_size_bytes, num_channels, num_samples,
                 duration_seconds, snr_improvement, noise_reduction_percent,
                 dominant_band, artefacts_detected, band_powers, overall_score,
-                signal_preservation, full_results, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                signal_preservation, full_results, raw_data_path, cleaned_data_path, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            filename, file_hash, file_size_bytes, num_channels, num_samples,
+            filename, name, file_hash, file_size_bytes, num_channels, num_samples,
             duration_seconds, snr_improvement, noise_reduction_percent,
             dominant_band, artefacts_detected, band_powers_json, overall_score,
-            signal_preservation, full_results_json, status
+            signal_preservation, full_results_json, raw_data_path, cleaned_data_path, status
         ))
         record_id = cursor.lastrowid
 
@@ -320,6 +329,33 @@ def get_statistics() -> Dict[str, Any]:
     conn.close()
 
     return _row_to_dict(row) if row else {}
+
+
+def rename_analysis(analysis_id: int, name: str) -> bool:
+    """
+    Rename an analysis record.
+
+    Args:
+        analysis_id: The ID of the analysis to rename.
+        name: The new name for the analysis.
+
+    Returns:
+        True if renamed, False if not found.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if USE_POSTGRES:
+        cursor.execute("UPDATE analyses SET name = %s WHERE id = %s", (name, analysis_id))
+    else:
+        cursor.execute("UPDATE analyses SET name = ? WHERE id = ?", (name, analysis_id))
+
+    updated = cursor.rowcount > 0
+
+    conn.commit()
+    conn.close()
+
+    return updated
 
 
 def delete_analysis(analysis_id: int) -> bool:

@@ -5,6 +5,7 @@ __pycache__/
 .DS_Store
 summary.mp3
 mindtrace/uploads/
+mindtrace/analysis_data/
 cleaned_data.npy
 eeg_analysis_report.pdf
 eeg_report.md
