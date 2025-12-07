@@ -4,6 +4,7 @@ from pathlib import Path
 import markdown
 import numpy as np
 from typing import Optional
+from datetime import datetime
 
 from fastapi import FastAPI, File, UploadFile, Request, Form
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, Response
@@ -815,13 +816,15 @@ async def process_and_evaluate(username: str):
     2. Loads and validates the data
     3. Applies the cleaning pipeline (filters + ICA)
     4. Runs comprehensive evaluation
-    5. Returns the evaluation report as markdown
+    5. Returns a combined markdown report containing both:
+       - EEG Signal Analysis Report (signal quality, frequency analysis, clinical findings)
+       - Processing Pipeline Evaluation Report (pipeline metrics and effectiveness)
     
     Args:
         username: Unique username to look up the uploaded CSV file (query parameter)
     
     Returns:
-        Markdown-formatted evaluation report
+        Combined markdown-formatted report with both EEG analysis and evaluation sections
     """
     if not username or username.strip() == "":
         return Response(
@@ -880,8 +883,11 @@ async def process_and_evaluate(username: str):
             # Run cleaning
             agent.initial_clean()
             
-            # Generate explanation (for analysis results)
+            # Generate explanation (for analysis results and EEG report)
             explanation, _ = agent.generate_explanation()
+            
+            # Get EEG report from explanation
+            eeg_report = explanation.get("full_report", "")
             
             # Run evaluation
             evaluation_results = agent.run_evaluation()
@@ -894,14 +900,34 @@ async def process_and_evaluate(username: str):
                 )
             
             # Generate markdown evaluation report
-            markdown_report = agent.get_evaluation_report()
+            evaluation_report = agent.get_evaluation_report()
             
-            # Return markdown report
+            # Combine both reports into a single markdown document
+            combined_report = f"""# EEG Analysis Report
+
+Generated for: {username}
+Source File: {stored_filename}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+---
+
+## Part 1: EEG Signal Analysis Report
+
+{eeg_report}
+
+---
+
+## Part 2: Processing Pipeline Evaluation Report
+
+{evaluation_report}
+"""
+            
+            # Return combined markdown report
             return Response(
-                content=markdown_report,
+                content=combined_report,
                 media_type="text/markdown",
                 headers={
-                    "Content-Disposition": f"attachment; filename=evaluation_report_{stored_filename}.md"
+                    "Content-Disposition": f"attachment; filename=complete_report_{stored_filename}.md"
                 }
             )
         
